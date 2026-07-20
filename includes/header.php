@@ -186,18 +186,27 @@ $current_page = basename($_SERVER['PHP_SELF']);
                 <span style="font-size: 12px; color: var(--secondary-text);">▼</span>
                 
                 <div class="dropdown-menu" id="userDropdown" style="display: none;">
-                    <a href="/interntrack/profile.php">
-                        <span>👤</span> <?php echo t('profile'); ?>
-                    </a>
-                    <a href="/interntrack/settings.php">
-                        <span>⚙️</span> <?php echo t('settings'); ?>
-                    </a>
                     <div class="divider"></div>
                     <a href="/interntrack/auth/logout.php" style="color: var(--primary-red);">
                         <span>🚪</span> <?php echo t('logout'); ?>
                     </a>
                 </div>
             </div>
+        </div>
+        <div class="user-avatar" id="headerAvatar">
+            <?php 
+            $profile_picture = $user['profile_picture'] ?? null;
+            if ($profile_picture): 
+            ?>
+                <img src="/interntrack/uploads/profiles/<?php echo $profile_picture; ?>" 
+                    alt="Profile" 
+                    style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+            <?php else: 
+                $name = $user['first_name'] . ' ' . $user['last_name'];
+                $parts = explode(' ', $name);
+                echo strtoupper($parts[0][0] ?? 'U') . (isset($parts[1]) ? strtoupper($parts[1][0] ?? '') : '');
+            endif; 
+            ?>
         </div>
     </header>
     

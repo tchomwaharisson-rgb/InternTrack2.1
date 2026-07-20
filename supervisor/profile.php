@@ -206,5 +206,71 @@ include_once '../includes/header.php';
         </form>
     </div>
 </div>
+<!-- Profile Picture Section -->
+<div style="text-align: center; min-width: 150px;">
+    <?php 
+    $profile_picture = $user['profile_picture'] ?? null;
+    $default_avatar = '/interntrack/assets/images/default-avatar.png';
+    $avatar_url = $profile_picture ? '/interntrack/uploads/profiles/' . $profile_picture : $default_avatar;
+    ?>
+    <div style="position: relative; width: 120px; height: 120px; margin: 0 auto 12px;">
+        <?php if ($profile_picture): ?>
+            <img src="<?php echo $avatar_url; ?>" 
+                 alt="Profile" 
+                 id="profilePreview"
+                 data-default="<?php echo $default_avatar; ?>"
+                 style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary-color);">
+        <?php else: ?>
+            <div id="profilePreview" 
+                 data-default="<?php echo $default_avatar; ?>"
+                 style="width: 120px; height: 120px; border-radius: 50%; background: var(--red-gradient); color: white; display: flex; align-items: center; justify-content: center; font-size: 48px; font-weight: 700; border: 3px solid var(--primary-color);">
+                <?php 
+                    $name = $user['first_name'] . ' ' . $user['last_name'];
+                    $parts = explode(' ', $name);
+                    echo strtoupper($parts[0][0] ?? 'U') . (isset($parts[1]) ? strtoupper($parts[1][0] ?? '') : '');
+                ?>
+            </div>
+        <?php endif; ?>
+        
+        <!-- Upload Button Overlay -->
+        <div style="position: absolute; bottom: 0; right: 0; background: var(--primary-color); border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid white; transition: all var(--transition-speed); box-shadow: 0 2px 8px rgba(0,0,0,0.2);" 
+             id="uploadProfileBtn"
+             title="<?php echo t('upload_photo'); ?>">
+            <span style="color: white; font-size: 16px;">📷</span>
+        </div>
+    </div>
+    
+    <input type="file" id="profilePictureInput" accept="image/jpeg,image/png,image/gif,image/webp" style="display: none;">
+    
+    <div style="margin-top: 8px;">
+        <?php if ($profile_picture): ?>
+            <button id="removeProfileBtn" class="btn btn-sm btn-danger" style="margin-top: 8px;">
+                🗑️ <?php echo t('remove_photo'); ?>
+            </button>
+        <?php else: ?>
+            <button id="removeProfileBtn" class="btn btn-sm btn-danger" style="display: none; margin-top: 8px;">
+                🗑️ <?php echo t('remove_photo'); ?>
+            </button>
+        <?php endif; ?>
+    </div>
+    
+    <div style="font-size: 18px; font-weight: 600; color: var(--gray-800); margin-top: 12px;">
+        <?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?>
+    </div>
+    <div style="color: var(--gray-500);">
+        <?php 
+            $role = $user['role'] ?? '';
+            echo t($role);
+        ?>
+    </div>
+    <div style="margin-top: 8px;">
+        <span class="status-badge <?php echo $user['is_active'] ? 'active' : 'inactive'; ?>">
+            <?php echo $user['is_active'] ? t('active') : t('inactive'); ?>
+        </span>
+    </div>
+</div>
+
+<!-- Add JavaScript at the bottom of the page -->
+<script src="/interntrack/assets/js/profile-picture.js"></script>
 
 <?php include_once '../includes/footer.php'; ?>

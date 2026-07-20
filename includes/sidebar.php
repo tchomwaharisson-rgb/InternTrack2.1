@@ -19,7 +19,7 @@ $role = $_SESSION['user_role'] ?? '';
         
         <?php if ($role === 'intern'): ?>
             <li class="nav-item">
-                <a href="/interntrack/intern/timelog.php" class="<?php echo $current_page === 'timelog.php' ? 'active' : ''; ?>">
+                <a href="/interntrack/intern/timelogs.php" class="<?php echo $current_page === 'timelog.php' ? 'active' : ''; ?>">
                     <span class="icon">⏱️</span>
                     <?php echo t('timelog'); ?>
                 </a>
@@ -33,7 +33,7 @@ $role = $_SESSION['user_role'] ?? '';
             <li class="nav-item">
                 <a href="/interntrack/intern/leave.php" class="<?php echo $current_page === 'leave.php' ? 'active' : ''; ?>">
                     <span class="icon">📅</span>
-                    <?php echo t('leave'); ?>
+                    <?php echo t('leave Request'); ?>
                 </a>
             </li>
             <li class="nav-item">
@@ -56,6 +56,12 @@ $role = $_SESSION['user_role'] ?? '';
                     ?>
                 </a>
             </li>
+            <li class="nav-item">
+                <a href="/interntrack/intern/profile.php" class="<?php echo $current_page === 'profile.php' ? 'active' : ''; ?>">
+                    <span class="icon">👤</span>
+                    <?php echo t('profile'); ?>
+                </a>
+            </li>
             
         <?php elseif ($role === 'supervisor'): ?>
             <li class="nav-item">
@@ -68,6 +74,12 @@ $role = $_SESSION['user_role'] ?? '';
                 <a href="/interntrack/supervisor/timelogs.php" class="<?php echo $current_page === 'timelogs.php' ? 'active' : ''; ?>">
                     <span class="icon">⏱️</span>
                     <?php echo t('timelog'); ?>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/interntrack/supervisor/leave.php" class="<?php echo $current_page === 'leave.php' ? 'active' : ''; ?>">
+                    <span class="icon">📅</span>
+                    <?php echo t('leave Request'); ?>
                 </a>
             </li>
             <li class="nav-item">
@@ -94,6 +106,12 @@ $role = $_SESSION['user_role'] ?? '';
                             // Handle error silently
                         }
                     ?>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/interntrack/supervisor/profile.php" class="<?php echo $current_page === 'profile.php' ? 'active' : ''; ?>">
+                    <span class="icon">👤</span>
+                    <?php echo t('profile'); ?>
                 </a>
             </li>
             
@@ -131,6 +149,12 @@ $role = $_SESSION['user_role'] ?? '';
                 </a>
             </li>
             <li class="nav-item">
+                <a href="/interntrack/admin/leave.php" class="<?php echo $current_page === 'leave.php' ? 'active' : ''; ?>">
+                    <span class="icon">📅</span>
+                    <?php echo t('leave Request'); ?>
+                </a>
+            </li>
+            <li class="nav-item">
                 <a href="/interntrack/admin/settings.php" class="<?php echo $current_page === 'settings.php' ? 'active' : ''; ?>">
                     <span class="icon">⚙️</span>
                     <?php echo t('system_settings'); ?>
@@ -142,16 +166,16 @@ $role = $_SESSION['user_role'] ?? '';
                     <?php echo t('system_reports'); ?>
                 </a>
             </li>
+            <li class="nav-item">
+                <a href="/interntrack/admin/profile.php" class="<?php echo $current_page === 'profile.php' ? 'active' : ''; ?>">
+                    <span class="icon">👤</span>
+                    <?php echo t('profile'); ?>
+                </a>
+            </li>
         <?php endif; ?>
         
         <li class="nav-section" style="margin-top: 20px;">
             <div class="nav-section-title"><?php echo t('account'); ?></div>
-        </li>
-        <li class="nav-item">
-            <a href="/interntrack/profile.php" class="<?php echo $current_page === 'profile.php' ? 'active' : ''; ?>">
-                <span class="icon">👤</span>
-                <?php echo t('profile'); ?>
-            </a>
         </li>
         <li class="nav-item">
             <a href="/interntrack/auth/logout.php" style="color: var(--primary-red);">
