@@ -243,6 +243,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             <div class="auth-footer">
                 <p><?php echo t('dont_have_account'); ?> <a href="/interntrack/auth/register.php"><?php echo t('register'); ?></a></p>
+                <p><?php ?> <a href="/interntrack"><?php echo t('Back to Home'); ?></a></p>
                 <p style="margin-top: 8px;"><a href="/interntrack/auth/forgot_password.php"><?php echo t('forgot_password'); ?></a></p>
             </div>
             

@@ -327,6 +327,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             <div class="auth-footer">
                 <p><?php echo t('already_have_account'); ?> <a href="/interntrack/auth/login.php"><?php echo t('login'); ?></a></p>
+                <p><?php ?> <a href="/interntrack"><?php echo t('Back to Home'); ?></a></p>
             </div>
             
             <div class="language-switcher" style="justify-content: center; margin-top: 20px;">
