@@ -68,12 +68,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $new_password = $_POST['new_password'] ?? '';
         $confirm_password = $_POST['confirm_password'] ?? '';
         
-        // Verify current password
         if (!password_verify($current_password, $user['password'])) {
             $message = t('current_password_incorrect');
             $message_type = 'error';
         } elseif (strlen($new_password) < 8) {
-            $message = 'Password must be at least 8 characters long';
+            $message = t('password_too_short');
             $message_type = 'error';
         } elseif ($new_password !== $confirm_password) {
             $message = t('password_mismatch');
@@ -108,6 +107,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         }
     }
 }
+
+// Get profile picture
+$profile_picture = $user['profile_picture'] ?? null;
+$default_avatar = '/interntrack/assets/images/default-avatar.png';
+$avatar_url = $profile_picture ? '/interntrack/uploads/profiles/' . $profile_picture : $default_avatar;
 
 include_once '../includes/header.php';
 ?>
@@ -149,31 +153,65 @@ include_once '../includes/header.php';
         </div>
         
         <div style="display: flex; gap: 24px; flex-wrap: wrap;">
-            <!-- Profile Picture -->
+            <!-- Profile Picture Section -->
             <div style="text-align: center; min-width: 150px;">
-                <div style="width: 120px; height: 120px; border-radius: 50%; background: var(--red-gradient); color: white; display: flex; align-items: center; justify-content: center; font-size: 48px; font-weight: 700; margin: 0 auto 12px; box-shadow: var(--shadow-md);">
-                    <?php 
-                        $name = $user['first_name'] . ' ' . $user['last_name'];
-                        $parts = explode(' ', $name);
-                        echo strtoupper($parts[0][0] ?? 'A') . (isset($parts[1]) ? strtoupper($parts[1][0] ?? '') : '');
-                    ?>
+                <div style="position: relative; width: 120px; height: 120px; margin: 0 auto 12px;">
+                    <?php if ($profile_picture): ?>
+                        <img src="<?php echo $avatar_url; ?>" 
+                             alt="Profile" 
+                             id="profilePreview"
+                             data-default="<?php echo $default_avatar; ?>"
+                             style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary-color); box-shadow: var(--shadow-md);">
+                    <?php else: ?>
+                        <div id="profilePreview" 
+                             data-default="<?php echo $default_avatar; ?>"
+                             style="width: 120px; height: 120px; border-radius: 50%; background: var(--red-gradient); color: white; display: flex; align-items: center; justify-content: center; font-size: 48px; font-weight: 700; border: 3px solid var(--primary-color); box-shadow: var(--shadow-md);">
+                            <?php 
+                                $name = $user['first_name'] . ' ' . $user['last_name'];
+                                $parts = explode(' ', $name);
+                                echo strtoupper($parts[0][0] ?? 'A') . (isset($parts[1]) ? strtoupper($parts[1][0] ?? '') : '');
+                            ?>
+                        </div>
+                    <?php endif; ?>
+                    
+                    <!-- Upload Button Overlay -->
+                    <div style="position: absolute; bottom: 0; right: 0; background: var(--primary-color); border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid white; transition: all var(--transition-speed); box-shadow: 0 2px 8px rgba(0,0,0,0.2);" 
+                         id="uploadProfileBtn"
+                         title="<?php echo t('upload_photo'); ?>">
+                        <span style="color: white; font-size: 16px;">📷</span>
+                    </div>
                 </div>
-                <?php if ($user['profile_picture']): ?>
-                    <img src="/interntrack/uploads/<?php echo $user['profile_picture']; ?>" 
-                         alt="Profile" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; margin: 0 auto 12px; border: 3px solid var(--primary-color);">
-                <?php endif; ?>
-                <div style="font-size: 18px; font-weight: 600; color: var(--gray-800);">
+                
+                <input type="file" id="profilePictureInput" accept="image/jpeg,image/png,image/gif,image/webp" style="display: none;">
+                
+                <div style="margin-top: 8px;">
+                    <?php if ($profile_picture): ?>
+                        <button id="removeProfileBtn" class="btn btn-sm btn-danger" style="margin-top: 8px;">
+                            🗑️ <?php echo t('remove_photo'); ?>
+                        </button>
+                    <?php else: ?>
+                        <button id="removeProfileBtn" class="btn btn-sm btn-danger" style="display: none; margin-top: 8px;">
+                            🗑️ <?php echo t('remove_photo'); ?>
+                        </button>
+                    <?php endif; ?>
+                </div>
+                
+                <div style="font-size: 18px; font-weight: 600; color: var(--gray-800); margin-top: 12px;">
                     <?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?>
                 </div>
-                <div style="color: var(--gray-500);"><?php echo t('admin'); ?></div>
+                <div style="color: var(--gray-500);">
+                    <?php echo t('admin'); ?>
+                </div>
                 <div style="margin-top: 8px;">
                     <span class="status-badge <?php echo $user['is_active'] ? 'active' : 'inactive'; ?>">
                         <?php echo $user['is_active'] ? t('active') : t('inactive'); ?>
                     </span>
                 </div>
-                <div style="margin-top: 12px; font-size: 13px; color: var(--gray-500);">
-                    <div><?php echo t('member_since'); ?>: <?php echo date('M d, Y', strtotime($user['created_at'])); ?></div>
-                </div>
+                <?php if ($user['created_at']): ?>
+                    <div style="margin-top: 8px; font-size: 12px; color: var(--gray-400);">
+                        <?php echo t('member_since'); ?>: <?php echo date('M d, Y', strtotime($user['created_at'])); ?>
+                    </div>
+                <?php endif; ?>
             </div>
             
             <!-- Profile Details -->
@@ -326,111 +364,181 @@ include_once '../includes/header.php';
         </div>
     </div>
 </div>
-<!-- Profile Picture Section -->
-<div style="text-align: center; min-width: 150px;">
-    <?php 
-    $profile_picture = $user['profile_picture'] ?? null;
-    $default_avatar = '/interntrack/assets/images/default-avatar.png';
-    $avatar_url = $profile_picture ? '/interntrack/uploads/profiles/' . $profile_picture : $default_avatar;
-    ?>
-    <div style="position: relative; width: 120px; height: 120px; margin: 0 auto 12px;">
-        <?php if ($profile_picture): ?>
-            <img src="<?php echo $avatar_url; ?>" 
-                 alt="Profile" 
-                 id="profilePreview"
-                 data-default="<?php echo $default_avatar; ?>"
-                 style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary-color);">
-        <?php else: ?>
-            <div id="profilePreview" 
-                 data-default="<?php echo $default_avatar; ?>"
-                 style="width: 120px; height: 120px; border-radius: 50%; background: var(--red-gradient); color: white; display: flex; align-items: center; justify-content: center; font-size: 48px; font-weight: 700; border: 3px solid var(--primary-color);">
-                <?php 
-                    $name = $user['first_name'] . ' ' . $user['last_name'];
-                    $parts = explode(' ', $name);
-                    echo strtoupper($parts[0][0] ?? 'U') . (isset($parts[1]) ? strtoupper($parts[1][0] ?? '') : '');
-                ?>
-            </div>
-        <?php endif; ?>
-        
-        <!-- Upload Button Overlay -->
-        <div style="position: absolute; bottom: 0; right: 0; background: var(--primary-color); border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid white; transition: all var(--transition-speed); box-shadow: 0 2px 8px rgba(0,0,0,0.2);" 
-             id="uploadProfileBtn"
-             title="<?php echo t('upload_photo'); ?>">
-            <span style="color: white; font-size: 16px;">📷</span>
-        </div>
-    </div>
-    
-    <input type="file" id="profilePictureInput" accept="image/jpeg,image/png,image/gif,image/webp" style="display: none;">
-    
-    <div style="margin-top: 8px;">
-        <?php if ($profile_picture): ?>
-            <button id="removeProfileBtn" class="btn btn-sm btn-danger" style="margin-top: 8px;">
-                🗑️ <?php echo t('remove_photo'); ?>
-            </button>
-        <?php else: ?>
-            <button id="removeProfileBtn" class="btn btn-sm btn-danger" style="display: none; margin-top: 8px;">
-                🗑️ <?php echo t('remove_photo'); ?>
-            </button>
-        <?php endif; ?>
-    </div>
-    
-    <div style="font-size: 18px; font-weight: 600; color: var(--gray-800); margin-top: 12px;">
-        <?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?>
-    </div>
-    <div style="color: var(--gray-500);">
-        <?php 
-            $role = $user['role'] ?? '';
-            echo t($role);
-        ?>
-    </div>
-    <div style="margin-top: 8px;">
-        <span class="status-badge <?php echo $user['is_active'] ? 'active' : 'inactive'; ?>">
-            <?php echo $user['is_active'] ? t('active') : t('inactive'); ?>
-        </span>
-    </div>
-</div>
-
-<!-- Add JavaScript at the bottom of the page -->
-<script src="/interntrack/assets/js/profile-picture.js"></script>
 
 <script>
-    function togglePassword(fieldId) {
-        const field = document.getElementById(fieldId);
-        const type = field.getAttribute('type') === 'password' ? 'text' : 'password';
-        field.setAttribute('type', type);
-            
-        // Change button text/icon
-        const btn = field.parentElement.querySelector('.toggle-btn');
-        btn.textContent = type === 'password' ? '👁️' : '👁️‍🗨️';
+// Toggle password visibility
+function togglePassword(fieldId) {
+    const field = document.getElementById(fieldId);
+    const type = field.getAttribute('type') === 'password' ? 'text' : 'password';
+    field.setAttribute('type', type);
+    const btn = field.parentElement.querySelector('.toggle-btn');
+    btn.textContent = type === 'password' ? '👁️' : '👁️‍🗨️';
+}
+
+// Password confirmation validation
+document.getElementById('confirm_password')?.addEventListener('input', function() {
+    const password = document.getElementById('new_password');
+    if (this.value !== password.value) {
+        this.setCustomValidity('<?php echo t('password_mismatch'); ?>');
+    } else {
+        this.setCustomValidity('');
     }
-            
-    // Password confirmation validation
-    document.getElementById('confirm_password')?.addEventListener('input', function() {
-        const password = document.getElementById('new_password');
-        if (this.value !== password.value) {
-            this.setCustomValidity('<?php echo t('password_mismatch'); ?>');
+});
+
+// Profile Picture Upload
+document.addEventListener('DOMContentLoaded', function() {
+    const uploadBtn = document.getElementById('uploadProfileBtn');
+    const fileInput = document.getElementById('profilePictureInput');
+    const removeBtn = document.getElementById('removeProfileBtn');
+    const preview = document.getElementById('profilePreview');
+    
+    if (uploadBtn && fileInput) {
+        uploadBtn.addEventListener('click', function() {
+            fileInput.click();
+        });
+    }
+    
+    if (fileInput) {
+        fileInput.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                const file = this.files[0];
+                const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+                if (!allowedTypes.includes(file.type)) {
+                    showToast('<?php echo t('invalid_file_type'); ?>', 'error');
+                    this.value = '';
+                    return;
+                }
+                if (file.size > 5 * 1024 * 1024) {
+                    showToast('<?php echo t('file_too_large'); ?>', 'error');
+                    this.value = '';
+                    return;
+                }
+                uploadProfilePicture(file);
+            }
+        });
+    }
+    
+    if (removeBtn) {
+        removeBtn.addEventListener('click', function() {
+            if (confirm('Are you sure you want to remove your profile picture?')) {
+                removeProfilePicture();
+            }
+        });
+    }
+});
+
+function uploadProfilePicture(file) {
+    const formData = new FormData();
+    formData.append('action', 'upload_profile_picture');
+    formData.append('profile_picture', file);
+    
+    const uploadBtn = document.getElementById('uploadProfileBtn');
+    const originalText = uploadBtn.innerHTML;
+    uploadBtn.innerHTML = '⏳';
+    uploadBtn.disabled = true;
+    
+    fetch('/interntrack/api/upload.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('<?php echo t('photo_uploaded'); ?>', 'success');
+            const preview = document.getElementById('profilePreview');
+            if (preview) {
+                preview.src = data.url + '?t=' + new Date().getTime();
+                preview.style.display = 'block';
+            }
+            document.getElementById('removeProfileBtn').style.display = 'inline-block';
+            updateHeaderAvatar(data.url);
+            setTimeout(() => location.reload(), 1500);
         } else {
-            this.setCustomValidity('');
+            showToast(data.message || '<?php echo t('upload_failed'); ?>', 'error');
         }
+    })
+    .catch(error => {
+        showToast('<?php echo t('upload_failed'); ?>', 'error');
+        console.error('Upload error:', error);
+    })
+    .finally(() => {
+        uploadBtn.innerHTML = originalText;
+        uploadBtn.disabled = false;
+        document.getElementById('profilePictureInput').value = '';
     });
-            
-    // Form validation
-    document.getElementById('passwordForm')?.addEventListener('submit', function(e) {
-        const newPassword = document.getElementById('new_password');
-        const confirmPassword = document.getElementById('confirm_password');
-            
-        if (newPassword.value.length < 8) {
-            e.preventDefault();
-            showToast('Password must be at least 8 characters long', 'error');
-            return false;
+}
+
+function removeProfilePicture() {
+    const removeBtn = document.getElementById('removeProfileBtn');
+    removeBtn.innerHTML = '⏳';
+    removeBtn.disabled = true;
+    
+    const formData = new FormData();
+    formData.append('action', 'remove_profile_picture');
+    
+    fetch('/interntrack/api/upload.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('<?php echo t('photo_removed'); ?>', 'success');
+            const preview = document.getElementById('profilePreview');
+            if (preview) {
+                const defaultAvatar = preview.dataset.default || '/interntrack/assets/images/default-avatar.png';
+                preview.src = defaultAvatar;
+            }
+            removeBtn.style.display = 'none';
+            updateHeaderAvatar(null);
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showToast(data.message || '<?php echo t('remove_failed'); ?>', 'error');
         }
-            
-        if (newPassword.value !== confirmPassword.value) {
-            e.preventDefault();
-            showToast('<?php echo t('password_mismatch'); ?>', 'error');
-            return false;
-        }
+    })
+    .catch(error => {
+        showToast('<?php echo t('remove_failed'); ?>', 'error');
+        console.error('Remove error:', error);
+    })
+    .finally(() => {
+        removeBtn.innerHTML = '🗑️ <?php echo t('remove_photo'); ?>';
+        removeBtn.disabled = false;
     });
+}
+
+function updateHeaderAvatar(imageUrl) {
+    const avatar = document.querySelector('.user-avatar');
+    if (avatar) {
+        if (imageUrl) {
+            avatar.innerHTML = `<img src="${imageUrl}" alt="Profile" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+        } else {
+            const name = '<?php echo $user['first_name'] . ' ' . $user['last_name']; ?>';
+            const parts = name.split(' ');
+            const initials = parts.map(n => n[0]).join('').toUpperCase();
+            avatar.innerHTML = initials;
+        }
+    }
+}
+
+// Toast notification helper
+function showToast(message, type = 'info') {
+    const container = document.querySelector('.toast-container') || (() => {
+        const el = document.createElement('div');
+        el.className = 'toast-container';
+        document.body.appendChild(el);
+        return el;
+    })();
+    
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.textContent = message;
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+    }, 5000);
+}
 </script>
 
 <?php include_once '../includes/footer.php'; ?>

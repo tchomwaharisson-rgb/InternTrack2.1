@@ -1,9 +1,15 @@
 <?php
-global $conn; 
+// includes/header.php
+global $conn; // Make sure $conn is available
 
 $user = getUserData($_SESSION['user_id']);
 $unread_notifications = getUnreadNotifications($_SESSION['user_id']);
 $current_page = basename($_SERVER['PHP_SELF']);
+$profile_picture = $user['profile_picture'] ?? null;
+$default_avatar = '/interntrack/assets/images/default-avatar.png';
+$avatar_url = $profile_picture ? '/interntrack/uploads/profiles/' . $profile_picture : $default_avatar;
+$current_page = basename($_SERVER['PHP_SELF']);
+$role = $_SESSION['user_role'] ?? '';
 ?>
 <!DOCTYPE html>
 <html lang="<?php echo $_SESSION['language'] ?? 'en'; ?>" data-theme="<?php echo $_SESSION['theme'] ?? 'light'; ?>">
@@ -24,116 +30,106 @@ $current_page = basename($_SERVER['PHP_SELF']);
             </button>
             <a href="/interntrack/<?php echo $_SESSION['user_role'] ?? ''; ?>/dashboard.php" class="header-brand">
                 <!DOCTYPE html>
-                    <html>
-                    <head>
-                    <style>
-                    .logo-option1 {
-                        display: flex;
-                        align-items: center;
-                        gap: 12px;
-                        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                        text-decoration: none;
-                    }
-
-                    .logo-option1 .logo-icon {
-                        position: relative;
-                        width: 48px;
-                        height: 48px;
-                        background: linear-gradient(135deg, #D32F2F 0%, #B71C1C 100%);
-                        border-radius: 12px;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        box-shadow: 0 4px 15px rgba(211, 47, 47, 0.3);
-                        transition: transform 0.3s ease;
-                    }
-
-                    .logo-option1 .logo-icon:hover {
-                        transform: scale(1.05);
-                    }
-
-                    .logo-option1 .logo-icon .letter {
-                        color: white;
-                        font-size: 24px;
-                        font-weight: 800;
-                        letter-spacing: -1px;
-                        position: relative;
-                        z-index: 2;
-                    }
-
-                    .logo-option1 .logo-icon .track-line {
-                        position: absolute;
-                        bottom: 8px;
-                        left: 8px;
-                        right: 8px;
-                        height: 3px;
-                        background: rgba(255, 255, 255, 0.4);
-                        border-radius: 2px;
-                        overflow: hidden;
-                    }
-
-                    .logo-option1 .logo-icon .track-line::after {
-                        content: '';
-                        position: absolute;
-                        left: -100%;
-                        width: 50%;
-                        height: 100%;
-                        background: white;
-                        border-radius: 2px;
-                        animation: trackMove 3s ease-in-out infinite;
-                    }
-
-                    @keyframes trackMove {
-                        0% { left: -100%; }
-                        100% { left: 200%; }
-                    }
-
-                    .logo-option1 .logo-text {
-                        display: flex;
-                        flex-direction: column;
-                    }
-
-                    .logo-option1 .logo-text .main-text {
-                        font-size: 28px;
-                        font-weight: 800;
-                        color: #1A1A1A;
-                        line-height: 1;
-                        letter-spacing: -0.5px;
-                    }
-
-                    .logo-option1 .logo-text .main-text .red {
-                        color: #D32F2F;
-                    }
-
-                    .logo-option1 .logo-text .sub-text {
-                        font-size: 10px;
-                        font-weight: 600;
-                        color: #666;
-                        letter-spacing: 2.5px;
-                        text-transform: uppercase;
-                        margin-top: 2px;
-                    }
-                    </style>
-                    </head>
-                    <body>
-                    <a href="#" class="logo-option1">
-                        <div class="logo-icon">
-                            <span class="letter">IT</span>
-                            <div class="track-line"></div>
-                        </div>
-                        <div class="logo-text">
-                            <span class="main-text">Intern<span class="red">Track</span></span>
-                            <span class="sub-text">Management System</span>
-                        </div>
-                    </a>
-                    </body>
+                <html>
+                <head>
+                <style>
+                .logo-option1 {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    text-decoration: none;
+                }
+                .logo-option1 .logo-icon {
+                    position: relative;
+                    width: 48px;
+                    height: 48px;
+                    background: linear-gradient(135deg, #D32F2F 0%, #B71C1C 100%);
+                    border-radius: 12px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    box-shadow: 0 4px 15px rgba(211, 47, 47, 0.3);
+                    transition: transform 0.3s ease;
+                }
+                .logo-option1 .logo-icon:hover {
+                    transform: scale(1.05);
+                }
+                .logo-option1 .logo-icon .letter {
+                    color: white;
+                    font-size: 24px;
+                    font-weight: 800;
+                    letter-spacing: -1px;
+                    position: relative;
+                    z-index: 2;
+                }
+                .logo-option1 .logo-icon .track-line {
+                    position: absolute;
+                    bottom: 8px;
+                    left: 8px;
+                    right: 8px;
+                    height: 3px;
+                    background: rgba(255, 255, 255, 0.4);
+                    border-radius: 2px;
+                    overflow: hidden;
+                }
+                .logo-option1 .logo-icon .track-line::after {
+                    content: '';
+                    position: absolute;
+                    left: -100%;
+                    width: 50%;
+                    height: 100%;
+                    background: white;
+                    border-radius: 2px;
+                    animation: trackMove 3s ease-in-out infinite;
+                }
+                @keyframes trackMove {
+                    0% { left: -100%; }
+                    100% { left: 200%; }
+                }
+                .logo-option1 .logo-text {
+                    display: flex;
+                    flex-direction: column;
+                }
+                .logo-option1 .logo-text .main-text {
+                    font-size: 28px;
+                    font-weight: 800;
+                    color: #1A1A1A;
+                    line-height: 1;
+                    letter-spacing: -0.5px;
+                }
+                .logo-option1 .logo-text .main-text .red {
+                    color: #D32F2F;
+                }
+                .logo-option1 .logo-text .sub-text {
+                    font-size: 10px;
+                    font-weight: 600;
+                    color: #666;
+                    letter-spacing: 2.5px;
+                    text-transform: uppercase;
+                    margin-top: 2px;
+                }
+                </style>
+                </head>
+                <body>
+                <a href="#" class="logo-option1">
+                    <div class="logo-icon">
+                        <span class="letter">IT</span>
+                        <div class="track-line"></div>
+                    </div>
+                    <div class="logo-text">
+                        <span class="main-text">Intern<span class="red">Track</span></span>
+                        <span class="sub-text">Management System</span>
+                    </div>
+                </a>
+                </body>
                 </html>
             </a>
         </div>
         <div class="header-actions">
             <div class="language-switcher">
-                <button class="<?php echo ($_SESSION['language'] ?? 'en') === 'en' ? 'active' : ''; ?>" data-lang="en">EN</button>
-                <button class="<?php echo ($_SESSION['language'] ?? 'en') === 'fr' ? 'active' : ''; ?>" data-lang="fr">FR</button>
+                <button class="<?php echo ($_SESSION['language'] ?? 'en') === 'en' ? 'active' : ''; ?>" onclick="switchLanguage('en')">EN</button>
+                <button class="<?php echo ($_SESSION['language'] ?? 'en') === 'fr' ? 'active' : ''; ?>" onclick="switchLanguage('fr')">FR</button>
             </div>
             
             <button class="theme-toggle" title="<?php echo t('theme'); ?>" onclick="toggleTheme()">
@@ -146,67 +142,86 @@ $current_page = basename($_SERVER['PHP_SELF']);
                     <span class="notification-badge"><?php echo $unread_notifications; ?></span>
                 <?php endif; ?>
                 <div class="dropdown-menu" id="notificationDropdown" style="display: none;">
-                    <div style="padding: 8px 16px; font-weight: 600; border-bottom: 1px solid var(--primary-gray-dark);">
+                    <div style="padding: 8px 16px; font-weight: 600; border-bottom: 1px solid var(--gray-200);">
                         <?php echo t('notifications'); ?>
                     </div>
+                    <div style="padding: 8px 16px; border-top: 1px solid var(--gray-200); text-align: center;">
+                        <a href="/interntrack/notifications.php" style="font-size: 13px; color: var(--primary-color);"><?php echo t('view_all'); ?></a>
+                    </div>
                     <?php 
-                    $stmt = $conn->prepare("SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 10");
-                    $stmt->execute([$_SESSION['user_id']]);
-                    $notifications = $stmt->fetchAll();
+                    try {
+                        $stmt = $conn->prepare("SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 10");
+                        $stmt->execute([$_SESSION['user_id']]);
+                        $notifications = $stmt->fetchAll();
+                    } catch (PDOException $e) {
+                        $notifications = [];
+                    }
                     ?>
                     <?php if ($notifications): ?>
                         <?php foreach ($notifications as $notif): ?>
-                            <a href="<?php echo $notif['link'] ?? '#'; ?>" style="display: block; padding: 8px 16px; border-bottom: 1px solid var(--primary-gray-dark); font-size: 13px; <?php echo $notif['is_read'] ? '' : 'background: var(--primary-red-light);'; ?>">
+                            <a href="<?php echo $notif['link'] ?? '#'; ?>" style="display: block; padding: 8px 16px; border-bottom: 1px solid var(--gray-200); font-size: 13px; <?php echo $notif['is_read'] ? '' : 'background: var(--red-50);'; ?>">
                                 <?php echo htmlspecialchars($notif['message']); ?>
-                                <div style="font-size: 11px; color: var(--secondary-text);">
+                                <div style="font-size: 11px; color: var(--gray-500);">
                                     <?php echo timeAgo($notif['created_at']); ?>
                                 </div>
                             </a>
                         <?php endforeach; ?>
                     <?php else: ?>
-                        <div style="padding: 16px; text-align: center; color: var(--secondary-text);">
+                        <div style="padding: 16px; text-align: center; color: var(--gray-500);">
                             <?php echo t('no_notifications'); ?>
                         </div>
                     <?php endif; ?>
-                    <div style="padding: 8px 16px; border-top: 1px solid var(--primary-gray-dark); text-align: center;">
-                        <a href="/interntrack/notifications.php" style="font-size: 13px; color: var(--primary-red);"><?php echo t('view_all'); ?></a>
-                    </div>
                 </div>
             </button>
             
             <div class="user-menu" onclick="toggleUserMenu()">
-                <div class="user-avatar">
-                    <?php 
+                <div class="user-avatar" id="headerAvatar">
+                    <?php if ($profile_picture): ?>
+                        <img src="<?php echo $avatar_url; ?>" 
+                             alt="Profile" 
+                             style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                    <?php else: 
                         $name = $user['first_name'] . ' ' . $user['last_name'] ?? 'User';
                         $parts = explode(' ', $name);
                         echo strtoupper($parts[0][0] ?? 'U') . (isset($parts[1]) ? strtoupper($parts[1][0] ?? '') : '');
-                    ?>
+                    endif; ?>
                 </div>
                 <span class="user-name"><?php echo htmlspecialchars($user['first_name'] ?? 'User'); ?></span>
-                <span style="font-size: 12px; color: var(--secondary-text);">▼</span>
+                <span style="font-size: 12px; color: var(--gray-500);">▼</span>
                 
-                <div class="dropdown-menu" id="userDropdown" style="display: none;">
-                    <div class="divider"></div>
-                    <a href="/interntrack/auth/logout.php" style="color: var(--primary-red);">
-                        <span>🚪</span> <?php echo t('logout'); ?>
-                    </a>
-                </div>
+                <?php if ($role === 'intern'): ?>
+                    <div class="dropdown-menu" id="userDropdown" style="display: none;">
+                        <a href="/interntrack/intern/profile.php">
+                            <span>👤</span> <?php echo t('profile'); ?>
+                        </a>
+                        <div class="divider"></div>
+                        <a href="/interntrack/auth/logout.php" style="color: var(--primary-color);">
+                            <span>🚪</span> <?php echo t('logout'); ?>
+                        </a>
+                    </div>
+                <?php elseif ($role === 'supervisor'): ?>
+                    <div class="dropdown-menu" id="userDropdown" style="display: none;">
+                        <a href="/interntrack/supervisor/profile.php">
+                            <span>👤</span> <?php echo t('profile'); ?>
+                        </a>
+                        <div class="divider"></div>
+                        <a href="/interntrack/auth/logout.php" style="color: var(--primary-color);">
+                            <span>🚪</span> <?php echo t('logout'); ?>
+                        </a>
+                    </div>
+
+                <?php elseif ($role === 'admin'): ?>
+                    <div class="dropdown-menu" id="userDropdown" style="display: none;">
+                        <a href="/interntrack/admin/profile.php">
+                            <span>👤</span> <?php echo t('profile'); ?>
+                        </a>
+                        <div class="divider"></div>
+                        <a href="/interntrack/auth/logout.php" style="color: var(--primary-color);">
+                            <span>🚪</span> <?php echo t('logout'); ?>
+                        </a>
+                    </div>
+                <?php endif; ?>
             </div>
-        </div>
-        <div class="user-avatar" id="headerAvatar">
-            <?php 
-            $profile_picture = $user['profile_picture'] ?? null;
-            if ($profile_picture): 
-            ?>
-                <img src="/interntrack/uploads/profiles/<?php echo $profile_picture; ?>" 
-                    alt="Profile" 
-                    style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
-            <?php else: 
-                $name = $user['first_name'] . ' ' . $user['last_name'];
-                $parts = explode(' ', $name);
-                echo strtoupper($parts[0][0] ?? 'U') . (isset($parts[1]) ? strtoupper($parts[1][0] ?? '') : '');
-            endif; 
-            ?>
         </div>
     </header>
     
@@ -214,6 +229,23 @@ $current_page = basename($_SERVER['PHP_SELF']);
     <?php include_once 'sidebar.php'; ?>
     
     <script>
+    function switchLanguage(lang) {
+        fetch('/interntrack/api/settings.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ action: 'language', language: lang })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+    
     function toggleTheme() {
         const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
         const newTheme = currentTheme === 'light' ? 'dark' : 'light';
@@ -235,6 +267,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
                     darkModeCss.disabled = newTheme !== 'dark';
                 }
                 document.querySelector('.theme-toggle').textContent = newTheme === 'light' ? '🌙' : '☀️';
+                document.body.classList.toggle('dark-mode', newTheme === 'dark');
             }
         });
     }
@@ -242,7 +275,6 @@ $current_page = basename($_SERVER['PHP_SELF']);
     function toggleNotifications() {
         const dropdown = document.getElementById('notificationDropdown');
         dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
-        // Mark as read when opened
         if (dropdown.style.display === 'block') {
             fetch('/interntrack/api/notifications.php', {
                 method: 'POST',
@@ -270,24 +302,15 @@ $current_page = basename($_SERVER['PHP_SELF']);
         }
     });
     
-    // Language switcher
-    document.querySelectorAll('.language-switcher button').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const lang = this.dataset.lang;
-            fetch('/interntrack/api/settings.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify({ action: 'language', language: lang })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    location.reload();
-                }
-            });
-        });
+    // Initialize dark mode
+    document.addEventListener('DOMContentLoaded', function() {
+        const theme = document.documentElement.getAttribute('data-theme') || 'light';
+        if (theme === 'dark') {
+            document.body.classList.add('dark-mode');
+            const darkModeCss = document.querySelector('link[href*="dark-mode.css"]');
+            if (darkModeCss) {
+                darkModeCss.disabled = false;
+            }
+        }
     });
     </script>

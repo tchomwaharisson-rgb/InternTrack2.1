@@ -1,9 +1,8 @@
 <?php
-// auth/register.php
 require_once '../config/config.php';
 require_once '../config/language.php';
 
-global $conn ;
+global $conn;
 
 if (isLoggedIn()) {
     header('Location: /interntrack/dashboard.php');
@@ -14,30 +13,31 @@ $error = '';
 $success = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $role = $_POST['role'] ?? '';
-    $email = $_POST['email'] ?? '';
-    $first_name = $_POST['first_name'] ?? '';
-    $last_name = $_POST['last_name'] ?? '';
+    $email = sanitize($_POST['email'] ?? '');
+    $first_name = sanitize($_POST['first_name'] ?? '');
+    $last_name = sanitize($_POST['last_name'] ?? '');
     $password = $_POST['password'] ?? '';
     $confirm_password = $_POST['confirm_password'] ?? '';
     
-    // Additional fields based on role
-    $school = $_POST['school'] ?? '';
-    $field_of_study = $_POST['field_of_study'] ?? '';
-    $department = $_POST['department'] ?? '';
-    $position = $_POST['position'] ?? '';
+    // Intern specific fields
+    $school = sanitize($_POST['school'] ?? '');
+    $field_of_study = sanitize($_POST['field_of_study'] ?? '');
+    $theme = sanitize($_POST['theme'] ?? ''); // Optional theme field
+    $internship_duration = (int)($_POST['internship_duration'] ?? 3);
+    $start_date = $_POST['start_date'] ?? date('Y-m-d');
+    $end_date = $_POST['end_date'] ?? date('Y-m-d', strtotime('+3 months'));
     
     // Validation
-    if (empty($role) || empty($email) || empty($first_name) || empty($last_name) || empty($password)) {
-        $error = t('error_occurred') . ' - All fields are required';
+    if (empty($email) || empty($first_name) || empty($last_name) || empty($password)) {
+        $error = t('please_fill_all_fields');
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $error = t('invalid_email_format');
     } elseif ($password !== $confirm_password) {
         $error = t('password_mismatch');
-    } elseif (strlen($password) < 6) {
-        $error = 'Password must be at least 6 characters long';
-    } elseif ($role === 'intern' && (empty($school) || empty($field_of_study))) {
+    } elseif (strlen($password) < 8) {
+        $error = t('password_too_short');
+    } elseif (empty($school) || empty($field_of_study)) {
         $error = 'School and field of study are required for interns';
-    } elseif ($role === 'supervisor' && (empty($department) || empty($position))) {
-        $error = 'Department and position are required for supervisors';
     } else {
         // Check if email already exists
         $stmt = $conn->prepare("SELECT id FROM users WHERE email = ?");
@@ -51,14 +51,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($stmt->fetch()) {
                 $error = 'A registration request with this email is already pending approval';
             } else {
-                // Create registration request
+                // Create registration request - only interns now
                 $password_hash = password_hash($password, PASSWORD_DEFAULT);
+                $role = 'intern'; // Always intern
                 
                 $stmt = $conn->prepare("INSERT INTO registration_requests 
-                    (email, first_name, last_name, role, school, field_of_study, department, position, password_hash) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                    (email, first_name, last_name, role, school, field_of_study, theme, internship_duration, start_date, end_date, password_hash) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
                 
-                if ($stmt->execute([$email, $first_name, $last_name, $role, $school, $field_of_study, $department, $position, $password_hash])) {
+                if ($stmt->execute([
+                    $email, 
+                    $first_name, 
+                    $last_name, 
+                    $role, 
+                    $school, 
+                    $field_of_study, 
+                    $theme, 
+                    $internship_duration, 
+                    $start_date, 
+                    $end_date, 
+                    $password_hash
+                ])) {
                     // Send notification to admin
                     $stmt = $conn->prepare("SELECT id FROM users WHERE role = 'admin' AND is_active = TRUE");
                     $stmt->execute();
@@ -66,10 +79,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     
                     foreach ($admins as $admin) {
                         $message = "New registration request from " . $first_name . " " . $last_name . " (" . $email . ")";
+                        if (!empty($theme)) {
+                            $message .= " - Theme: " . $theme;
+                        }
                         createNotification($admin['id'], 'registration_request', $message, '/interntrack/admin/requests.php');
                     }
                     
-                    $success = t('verification_sent') . ' - ' . t('awaiting_approval');
+                    $success = t('registration_success');
                 } else {
                     $error = t('error_occurred');
                 }
@@ -224,7 +240,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </a>
             </div>
             
-            <h1 class="auth-subtitle"><?php echo t('create_account'); ?></h1>
+            <h1 class="auth-subtitle"><?php echo t('create account'); ?></h1>
             
             <?php if ($error): ?>
                 <div class="toast toast-error"><?php echo $error; ?></div>
@@ -236,24 +252,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             <?php if (!$success): ?>
             <form method="POST" action="" data-validate>
-                <div class="form-group">
-                    <label><?php echo t('register_as'); ?></label>
-                    <div style="display: flex; gap: 12px;">
-                        <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
-                            <input type="radio" name="role" value="intern" required 
-                                   <?php echo ($_POST['role'] ?? '') === 'intern' ? 'checked' : ''; ?> 
-                                   onchange="toggleRoleFields()">
-                            <?php echo t('intern'); ?>
-                        </label>
-                        <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
-                            <input type="radio" name="role" value="supervisor" required 
-                                   <?php echo ($_POST['role'] ?? '') === 'supervisor' ? 'checked' : ''; ?> 
-                                   onchange="toggleRoleFields()">
-                            <?php echo t('supervisor'); ?>
-                        </label>
-                    </div>
-                </div>
-                
                 <div class="form-row">
                     <div class="form-group">
                         <label for="first_name"><?php echo t('first_name'); ?></label>
@@ -277,11 +275,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="form-group password-toggle">
                         <label for="password"><?php echo t('password'); ?></label>
                         <input type="password" id="password" name="password" class="form-control" required 
-                               minlength="6">
+                               minlength="8">
                         <button type="button" class="toggle-btn" onclick="togglePassword('password')" aria-label="Toggle password visibility">
                             👁️
                         </button>
-                        <small style="font-size: 12px; color: var(--secondary-text);">At least 6 characters</small>
+                        <small style="font-size: 12px; color: var(--secondary-text);">At least 8 characters</small>
                     </div>
                     <div class="form-group password-toggle">
                         <label for="confirm_password"><?php echo t('confirm_password'); ?></label>
@@ -292,33 +290,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </button>
                     </div>
                 </div>
+            
+                <div class="form-group">
+                    <label for="school"><?php echo t('school'); ?></label>
+                    <input type="text" id="school" name="school" class="form-control" 
+                           value="<?php echo htmlspecialchars($_POST['school'] ?? ''); ?>">
+                </div>
+                <div class="form-group">
+                    <label for="field_of_study"><?php echo t('field_of_study'); ?></label>
+                    <input type="text" id="field_of_study" name="field_of_study" class="form-control" 
+                           value="<?php echo htmlspecialchars($_POST['field of study'] ?? ''); ?>">
+                </div>
+                <!-- Theme Field - Optional -->
+                <div class="form-group">
+                    <label for="theme">
+                        <?php echo t('internship_theme'); ?>
+                        <span class="optional">(<?php echo t('optional'); ?>)</span>
+                    </label>
+                    <input type="text" id="theme" name="theme" class="form-control" 
+                           placeholder="<?php echo t('enter internship theme'); ?>" 
+                           value="<?php echo htmlspecialchars($_POST['theme'] ?? ''); ?>">
+                    <small style="color: var(--gray-500); font-size: 12px; display: block; margin-top: 4px;">
+                        <?php echo t('theme_help_text'); ?>
+                    </small>
+                </div>
                 
-                <!-- Intern fields -->
-                <div id="intern_fields" style="display: none;">
+                <div class="form-row">
                     <div class="form-group">
-                        <label for="school"><?php echo t('school'); ?></label>
-                        <input type="text" id="school" name="school" class="form-control" 
-                               value="<?php echo htmlspecialchars($_POST['school'] ?? ''); ?>">
+                        <label for="internship_duration"><?php echo t('internship_duration_months'); ?></label>
+                        <select id="internship_duration" name="internship_duration" class="form-control" required>
+                            <option value="1" <?php echo ($_POST['internship_duration'] ?? 3) == 1 ? 'selected' : ''; ?>>1 <?php echo t('month'); ?></option>
+                            <option value="2" <?php echo ($_POST['internship_duration'] ?? 3) == 2 ? 'selected' : ''; ?>>2 <?php echo t('months'); ?></option>
+                            <option value="3" <?php echo ($_POST['internship_duration'] ?? 3) == 3 ? 'selected' : ''; ?>>3 <?php echo t('months'); ?></option>
+                            <option value="4" <?php echo ($_POST['internship_duration'] ?? 3) == 4 ? 'selected' : ''; ?>>4 <?php echo t('months'); ?></option>
+                            <option value="6" <?php echo ($_POST['internship_duration'] ?? 3) == 6 ? 'selected' : ''; ?>>6 <?php echo t('months'); ?></option>
+                            <option value="12" <?php echo ($_POST['internship_duration'] ?? 3) == 12 ? 'selected' : ''; ?>>12 <?php echo t('months'); ?></option>
+                        </select>
                     </div>
                     <div class="form-group">
-                        <label for="field_of_study"><?php echo t('field_of_study'); ?></label>
-                        <input type="text" id="field_of_study" name="field_of_study" class="form-control" 
-                               value="<?php echo htmlspecialchars($_POST['field_of_study'] ?? ''); ?>">
+                        <label for="start_date"><?php echo t('start_date'); ?></label>
+                        <input type="date" id="start_date" name="start_date" class="form-control" required 
+                               value="<?php echo $_POST['start_date'] ?? date('Y-m-d'); ?>">
                     </div>
                 </div>
                 
-                <!-- Supervisor fields -->
-                <div id="supervisor_fields" style="display: none;">
-                    <div class="form-group">
-                        <label for="department"><?php echo t('department'); ?></label>
-                        <input type="text" id="department" name="department" class="form-control" 
-                               value="<?php echo htmlspecialchars($_POST['department'] ?? ''); ?>">
-                    </div>
-                    <div class="form-group">
-                        <label for="position"><?php echo t('position'); ?></label>
-                        <input type="text" id="position" name="position" class="form-control" 
-                               value="<?php echo htmlspecialchars($_POST['position'] ?? ''); ?>">
-                    </div>
+                <div class="form-group">
+                    <label for="end_date"><?php echo t('end_date'); ?></label>
+                    <input type="date" id="end_date" name="end_date" class="form-control" required 
+                           value="<?php echo $_POST['end_date'] ?? date('Y-m-d', strtotime('+3 months')); ?>">
                 </div>
                 
                 <button type="submit" class="btn btn-primary btn-block"><?php echo t('register'); ?></button>
@@ -326,7 +345,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
             
             <div class="auth-footer">
-                <p><?php echo t('already_have_account'); ?> <a href="/interntrack/auth/login.php"><?php echo t('login'); ?></a></p>
+                <p><?php echo t('alread have account'); ?> <a href="/interntrack/auth/login.php"><?php echo t('login'); ?></a></p>
                 <p><?php ?> <a href="/interntrack"><?php echo t('Back to Home'); ?></a></p>
             </div>
             
@@ -338,46 +357,107 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
     
     <script>
+    // Toggle password visibility
     function togglePassword(fieldId) {
         const field = document.getElementById(fieldId);
         const type = field.getAttribute('type') === 'password' ? 'text' : 'password';
         field.setAttribute('type', type);
-        
-        // Change button text/icon
         const btn = field.parentElement.querySelector('.toggle-btn');
         btn.textContent = type === 'password' ? '👁️' : '👁️‍🗨️';
     }
-    
-    function toggleRoleFields() {
-        const role = document.querySelector('input[name="role"]:checked');
-        const internFields = document.getElementById('intern_fields');
-        const supervisorFields = document.getElementById('supervisor_fields');
+
+    // Auto-calculate end date based on start date and duration
+    document.getElementById('start_date')?.addEventListener('change', function() {
+        calculateEndDate();
+    });
+
+    document.getElementById('internship_duration')?.addEventListener('change', function() {
+        calculateEndDate();
+    });
+
+    function calculateEndDate() {
+        const startDate = document.getElementById('start_date').value;
+        const duration = parseInt(document.getElementById('internship_duration').value) || 3;
         
-        if (role) {
-            if (role.value === 'intern') {
-                internFields.style.display = 'block';
-                supervisorFields.style.display = 'none';
-                document.getElementById('school').required = true;
-                document.getElementById('field_of_study').required = true;
-                document.getElementById('department').required = false;
-                document.getElementById('position').required = false;
-            } else if (role.value === 'supervisor') {
-                internFields.style.display = 'none';
-                supervisorFields.style.display = 'block';
-                document.getElementById('school').required = false;
-                document.getElementById('field_of_study').required = false;
-                document.getElementById('department').required = true;
-                document.getElementById('position').required = true;
-            }
+        if (startDate) {
+            const date = new Date(startDate);
+            date.setMonth(date.getMonth() + duration);
+            // Subtract 1 day to get the correct end date
+            date.setDate(date.getDate() - 1);
+            const endDate = date.toISOString().split('T')[0];
+            document.getElementById('end_date').value = endDate;
         }
     }
-    
-    // Initialize on page load
+
+    // Password confirmation validation
+    document.getElementById('confirm_password')?.addEventListener('input', function() {
+        const password = document.getElementById('password');
+        if (this.value !== password.value) {
+            this.setCustomValidity('<?php echo t('password_mismatch'); ?>');
+        } else {
+            this.setCustomValidity('');
+        }
+    });
+
+    // Form validation
+    document.querySelector('form')?.addEventListener('submit', function(e) {
+        const password = document.getElementById('password');
+        const confirm = document.getElementById('confirm_password');
+        
+        if (password.value.length < 8) {
+            e.preventDefault();
+            alert('<?php echo t('password_too_short'); ?>');
+            return false;
+        }
+        
+        if (password.value !== confirm.value) {
+            e.preventDefault();
+            alert('<?php echo t('password_mismatch'); ?>');
+            return false;
+        }
+    });
+
+    // Language switcher
+    document.querySelectorAll('.language-switcher button').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const lang = this.dataset.lang;
+            document.querySelectorAll('.language-switcher button').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            fetch('/interntrack/api/settings.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ action: 'language', language: lang })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                }
+            })
+            .catch(error => console.error('Error switching language:', error));
+        });
+    });
+
+    // Initialize dark mode
     document.addEventListener('DOMContentLoaded', function() {
-        toggleRoleFields();
+        const theme = document.documentElement.getAttribute('data-theme') || 'light';
+        if (theme === 'dark') {
+            document.body.classList.add('dark-mode');
+            const darkModeCss = document.querySelector('link[href*="dark-mode.css"]');
+            if (darkModeCss) {
+                darkModeCss.disabled = false;
+            }
+        }
+        
+        // Calculate end date on load if start date is set
+        if (document.getElementById('start_date').value) {
+            calculateEndDate();
+        }
     });
     </script>
-    
-    <script src="/interntrack/assets/js/main.js"></script>
 </body>
 </html>

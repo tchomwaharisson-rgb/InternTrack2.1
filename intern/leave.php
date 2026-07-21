@@ -15,6 +15,9 @@ $user_id = $_SESSION['user_id'];
 $message = '';
 $message_type = '';
 
+// Get filter from URL
+$filter = $_GET['filter'] ?? 'all'; // pending, approved, rejected, all
+
 // Handle leave request submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     $action = $_POST['action'];
@@ -70,22 +73,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     }
 }
 
-// Get user data
-$user = getUserData($user_id);
+// Build query based on filter
+$sql = "SELECT * FROM leave_requests WHERE intern_id = ?";
+$params = [$user_id];
 
-// Get all leave requests for this intern
-$stmt = $conn->prepare("SELECT * FROM leave_requests WHERE intern_id = ? ORDER BY leave_date DESC");
-$stmt->execute([$user_id]);
+if ($filter === 'pending') {
+    $sql .= " AND status = 'pending'";
+} elseif ($filter === 'approved') {
+    $sql .= " AND status = 'approved'";
+} elseif ($filter === 'rejected') {
+    $sql .= " AND status = 'rejected'";
+}
+
+$sql .= " ORDER BY leave_date DESC";
+
+$stmt = $conn->prepare($sql);
+$stmt->execute($params);
 $leave_requests = $stmt->fetchAll();
 
-// Get pending count
-$pending_count = count(array_filter($leave_requests, function($r) { return $r['status'] === 'pending'; }));
+// Get counts for each status
+$stmt = $conn->prepare("SELECT status, COUNT(*) as count FROM leave_requests WHERE intern_id = ? GROUP BY status");
+$stmt->execute([$user_id]);
+$status_counts = [];
+while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+    $status_counts[$row['status']] = $row['count'];
+}
 
-// Get approved count
-$approved_count = count(array_filter($leave_requests, function($r) { return $r['status'] === 'approved'; }));
+$pending_count = $status_counts['pending'] ?? 0;
+$approved_count = $status_counts['approved'] ?? 0;
+$rejected_count = $status_counts['rejected'] ?? 0;
 
-// Get rejected count
-$rejected_count = count(array_filter($leave_requests, function($r) { return $r['status'] === 'rejected'; }));
+// Get user data
+$user = getUserData($user_id);
 
 // Get supervisor info
 $stmt = $conn->prepare("SELECT u.* FROM users u JOIN interns i ON u.id = i.supervisor_id WHERE i.user_id = ?");
@@ -102,26 +121,42 @@ include_once '../includes/header.php';
     
     <!-- Stats Cards -->
     <div class="stats-grid">
-        <div class="stat-card" style="border-left-color: #f59e0b;">
+        <div class="stat-card <?php echo $filter === 'pending' ? 'active' : ''; ?>" style="border-left-color: #f59e0b; cursor: pointer;" onclick="window.location.href='?filter=pending'">
             <div class="stat-icon">⏳</div>
             <div class="stat-value"><?php echo $pending_count; ?></div>
-            <div class="stat-label"><?php echo t('pending_leave'); ?></div>
+            <div class="stat-label"><?php echo t('pending'); ?></div>
         </div>
-        <div class="stat-card" style="border-left-color: #16a34a;">
+        <div class="stat-card <?php echo $filter === 'approved' ? 'active' : ''; ?>" style="border-left-color: #16a34a; cursor: pointer;" onclick="window.location.href='?filter=approved'">
             <div class="stat-icon">✅</div>
             <div class="stat-value"><?php echo $approved_count; ?></div>
-            <div class="stat-label"><?php echo t('approved_leave'); ?></div>
+            <div class="stat-label"><?php echo t('approved'); ?></div>
         </div>
-        <div class="stat-card" style="border-left-color: #dc2626;">
+        <div class="stat-card <?php echo $filter === 'rejected' ? 'active' : ''; ?>" style="border-left-color: #dc2626; cursor: pointer;" onclick="window.location.href='?filter=rejected'">
             <div class="stat-icon">❌</div>
             <div class="stat-value"><?php echo $rejected_count; ?></div>
-            <div class="stat-label"><?php echo t('rejected_leave'); ?></div>
+            <div class="stat-label"><?php echo t('rejected'); ?></div>
         </div>
-        <div class="stat-card" style="border-left-color: #3b82f6;">
-            <div class="stat-icon">📅</div>
-            <div class="stat-value"><?php echo count($leave_requests); ?></div>
-            <div class="stat-label"><?php echo t('total_requests'); ?></div>
+        <div class="stat-card <?php echo $filter === 'all' ? 'active' : ''; ?>" style="border-left-color: #3b82f6; cursor: pointer;" onclick="window.location.href='?filter=all'">
+            <div class="stat-icon">📋</div>
+            <div class="stat-value"><?php echo $pending_count + $approved_count + $rejected_count; ?></div>
+            <div class="stat-label"><?php echo t('all'); ?></div>
         </div>
+    </div>
+    
+    <!-- Filter Tabs -->
+    <div style="display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; border-bottom: 2px solid var(--gray-200); padding-bottom: 12px;">
+        <a href="?filter=pending" class="btn <?php echo $filter === 'pending' ? 'btn-primary' : 'btn-secondary'; ?>" style="border-radius: 20px;">
+            ⏳ <?php echo t('pending'); ?> (<?php echo $pending_count; ?>)
+        </a>
+        <a href="?filter=approved" class="btn <?php echo $filter === 'approved' ? 'btn-primary' : 'btn-secondary'; ?>" style="border-radius: 20px;">
+            ✅ <?php echo t('approved'); ?> (<?php echo $approved_count; ?>)
+        </a>
+        <a href="?filter=rejected" class="btn <?php echo $filter === 'rejected' ? 'btn-primary' : 'btn-secondary'; ?>" style="border-radius: 20px;">
+            ❌ <?php echo t('rejected'); ?> (<?php echo $rejected_count; ?>)
+        </a>
+        <a href="?filter=all" class="btn <?php echo $filter === 'all' ? 'btn-primary' : 'btn-secondary'; ?>" style="border-radius: 20px;">
+            📋 <?php echo t('all'); ?> (<?php echo $pending_count + $approved_count + $rejected_count; ?>)
+        </a>
     </div>
     
     <!-- Request Leave Form -->
@@ -169,7 +204,14 @@ include_once '../includes/header.php';
     <!-- Leave Requests List -->
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title"><?php echo t('my_leave_requests'); ?></h3>
+            <h3 class="card-title">
+                <?php 
+                    if ($filter === 'pending') echo t('pending_leave_requests');
+                    elseif ($filter === 'approved') echo t('approved_leave_requests');
+                    elseif ($filter === 'rejected') echo t('rejected_leave_requests');
+                    else echo t('my_leave_requests');
+                ?>
+            </h3>
             <span style="font-size: 14px; color: var(--gray-500);">
                 <?php echo count($leave_requests); ?> <?php echo t('requests'); ?>
             </span>
@@ -225,12 +267,39 @@ include_once '../includes/header.php';
         <?php else: ?>
             <div style="text-align: center; padding: 40px 0;">
                 <div style="font-size: 48px; margin-bottom: 16px;">📋</div>
-                <h3><?php echo t('no_leave_requests'); ?></h3>
-                <p style="color: var(--gray-500);"><?php echo t('no_leave_requests_message'); ?></p>
+                <h3>
+                    <?php 
+                        if ($filter === 'pending') echo t('no_pending_leave_requests');
+                        elseif ($filter === 'approved') echo t('no_approved_leave_requests');
+                        elseif ($filter === 'rejected') echo t('no_rejected_leave_requests');
+                        else echo t('no_leave_requests');
+                    ?>
+                </h3>
+                <p style="color: var(--gray-500);">
+                    <?php 
+                        if ($filter === 'pending') echo t('no_pending_leave_requests_message');
+                        elseif ($filter === 'approved') echo t('no_approved_leave_requests_message');
+                        elseif ($filter === 'rejected') echo t('no_rejected_leave_requests_message');
+                        else echo t('no_leave_requests_message');
+                    ?>
+                </p>
             </div>
         <?php endif; ?>
     </div>
 </div>
+
+<style>
+    .stat-card.active {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-lg);
+        border-left-width: 6px;
+    }
+    
+    .badge-vacation { background: #3b82f6; color: white; padding: 2px 10px; border-radius: 12px; font-size: 11px; }
+    .badge-sick { background: #16a34a; color: white; padding: 2px 10px; border-radius: 12px; font-size: 11px; }
+    .badge-personal { background: #f59e0b; color: white; padding: 2px 10px; border-radius: 12px; font-size: 11px; }
+    .badge-other { background: #6b7280; color: white; padding: 2px 10px; border-radius: 12px; font-size: 11px; }
+</style>
 
 <script>
 // Prevent selecting past dates

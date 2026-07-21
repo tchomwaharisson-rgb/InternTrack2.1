@@ -142,7 +142,7 @@ include_once '../includes/header.php';
                 </button>
             <?php endif; ?>
             
-            <a href="/interntrack/intern/timelog.php" class="btn btn-secondary">
+            <a href="/interntrack/intern/timelogs.php" class="btn btn-secondary">
                 <span>📋</span> <?php echo t('view_timelog'); ?>
             </a>
             <a href="/interntrack/intern/chat.php" class="btn btn-secondary">

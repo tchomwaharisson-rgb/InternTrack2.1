@@ -1,4 +1,5 @@
 <?php
+// api/notifications.php
 require_once '../config/config.php';
 require_once '../config/language.php';
 
@@ -12,8 +13,7 @@ if (!isLoggedIn()) {
 }
 
 $user_id = $_SESSION['user_id'];
-$data = json_decode(file_get_contents('php://input'), true);
-$action = $data['action'] ?? '';
+$action = $_POST['action'] ?? $_GET['action'] ?? '';
 
 switch ($action) {
     case 'mark_read':
@@ -23,6 +23,13 @@ switch ($action) {
         } else {
             echo json_encode(['success' => false, 'message' => 'Failed to mark notifications as read']);
         }
+        break;
+        
+    case 'get_unread_count':
+        $stmt = $conn->prepare("SELECT COUNT(*) FROM notifications WHERE user_id = ? AND is_read = FALSE");
+        $stmt->execute([$user_id]);
+        $count = $stmt->fetchColumn();
+        echo json_encode(['success' => true, 'count' => (int)$count]);
         break;
         
     default:
