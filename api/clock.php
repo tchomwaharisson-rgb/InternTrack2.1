@@ -34,10 +34,10 @@ try {
             
             // Check if it's before 8am (reminder)
             $work_start = getSetting('work_start') ?? '08:00:00';
-            if ($now < $work_start) {
-                echo json_encode(['success' => false, 'message' => 'Cannot clock in before ' . $work_start]);
-                exit;
-            }
+            // if ($now < $work_start) {
+            //     echo json_encode(['success' => false, 'message' => 'Cannot clock in before ' . $work_start]);
+            //     exit;
+            // }
             
             if (!$timelog) {
                 $stmt = $conn->prepare("INSERT INTO time_logs (intern_id, date, clock_in, status) VALUES (?, ?, ?, 'active')");

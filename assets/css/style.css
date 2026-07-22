@@ -308,6 +308,154 @@ body {
   object-fit: cover;
 }
 
+/* Sidebar Collapsed State */
+.sidebar.collapsed {
+  width: 70px;
+}
+
+.sidebar.collapsed .sidebar-brand-text,
+.sidebar.collapsed .sidebar-user-info,
+.sidebar.collapsed .nav-text,
+.sidebar.collapsed .nav-section-title,
+.sidebar.collapsed .badge {
+  display: none;
+}
+
+.sidebar.collapsed .sidebar-brand-link {
+  justify-content: center;
+}
+
+.sidebar.collapsed .sidebar-user {
+  justify-content: center;
+  padding: 12px 0;
+}
+
+.sidebar.collapsed .sidebar-user-avatar {
+  width: 40px;
+  height: 40px;
+}
+
+.sidebar.collapsed .sidebar-toggle-btn .toggle-icon {
+  transform: rotate(180deg);
+}
+
+.sidebar.collapsed .nav-item a {
+  justify-content: center;
+  padding: 12px;
+}
+
+.sidebar.collapsed .nav-item a .nav-icon {
+  margin-right: 0;
+  font-size: 22px;
+}
+
+.sidebar.collapsed .nav-section {
+  padding: 8px 0;
+}
+
+/* Sidebar Header */
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.sidebar-toggle-btn {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  color: black;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  font-size: 14px;
+}
+
+.sidebar-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: scale(1.05);
+}
+
+/* Mobile Menu Button */
+.mobile-menu-btn {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--gray-700);
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background 0.3s;
+}
+
+.mobile-menu-btn:hover {
+  background: var(--gray-100);
+}
+
+/* Mobile Sidebar Overlay */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+
+.sidebar-overlay.active {
+  display: block;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .sidebar {
+    transform: translateX(-100%);
+    width: 280px;
+  }
+
+  .sidebar.mobile-open {
+    transform: translateX(0);
+  }
+
+  .sidebar-overlay.active {
+    display: block;
+  }
+
+  .mobile-menu-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .main-content {
+    margin-left: 0 !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .sidebar {
+    width: 280px;
+  }
+}
+
+/* Dark Mode Support */
+body.dark-mode .mobile-menu-btn {
+  color: #e5e7eb;
+}
+
+body.dark-mode .mobile-menu-btn:hover {
+  background: #3a3a3a;
+}
+
 /* Dark mode support */
 body.dark-mode #uploadProfileBtn {
   border-color: #2d2d2d;

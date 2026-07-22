@@ -46,17 +46,17 @@ function t($key, $params = []) {
  * Get available languages
  * @return array Array of language codes and names
  */
-function getAvailableLanguages() {
-    return ['en' => 'English', 'fr' => 'Français'];
-}
+// function getAvailableLanguages() {
+//     return ['en' => 'English', 'fr' => 'Français'];
+// }
 
 /**
  * Get current language
  * @return string Current language code
  */
-function getCurrentLanguage() {
-    return $_SESSION['language'] ?? 'en';
-}
+// function getCurrentLanguage() {
+//     return $_SESSION['language'] ?? 'en';
+// }
 
 /**
  * Time ago function

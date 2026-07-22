@@ -571,6 +571,8 @@ $translations = [
     'search' => 'Rechercher',
     'filter' => 'Filtrer',
     'export' => 'Exporter',
+    'toggle_sidebar' => 'Basculer la barre latérale',
+    'toggle_menu' => 'Basculer le menu',
 ];
 
 return $translations;

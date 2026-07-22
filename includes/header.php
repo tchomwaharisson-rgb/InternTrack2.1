@@ -25,9 +25,15 @@ $role = $_SESSION['user_role'] ?? '';
     <!-- Header -->
     <header class="header">
         <div style="display: flex; align-items: center; gap: 16px;">
-            <button class="sidebar-toggle" style="background: none; border: none; font-size: 24px; cursor: pointer; display: none;" onclick="document.querySelector('.sidebar').classList.toggle('open')">
-                ☰
-            </button>
+            <!-- Mobile Menu Button -->
+        <button class="mobile-menu-btn" id="mobileMenuBtn" title="<?php echo t('toggle_menu'); ?>">
+            ☰
+        </button>
+        
+        <button class="sidebar-toggle" style="background: none; border: none; font-size: 24px; cursor: pointer; display: none;" onclick="document.querySelector('.sidebar').classList.toggle('open')">
+            ☰
+        </button>
+        <a href="/interntrack/<?php echo $_SESSION['user_role'] ?? ''; ?>/dashboard.php" class="header-brand">
             <a href="/interntrack/<?php echo $_SESSION['user_role'] ?? ''; ?>/dashboard.php" class="header-brand">
                 <!DOCTYPE html>
                 <html>
