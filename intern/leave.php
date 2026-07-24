@@ -312,6 +312,25 @@ document.getElementById('leave_date')?.addEventListener('change', function() {
         showToast('<?php echo t('past_dates_not_allowed'); ?>', 'error');
     }
 });
+
+function showToast(message, type = 'info') {
+    const container = document.querySelector('.toast-container') || (() => {
+        const el = document.createElement('div');
+        el.className = 'toast-container';
+        document.body.appendChild(el);
+        return el;
+    })();
+    
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.textContent = message;
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+    }, 5000);
+}
 </script>
 
 <?php include_once '../includes/footer.php'; ?>

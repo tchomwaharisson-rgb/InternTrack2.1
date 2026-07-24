@@ -1,4 +1,5 @@
 <?php
+// api/chat.php
 require_once '../config/config.php';
 require_once '../config/language.php';
 
@@ -55,10 +56,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($stmt->execute([$user_id, $receiver_id, $message])) {
                 $message_id = $conn->lastInsertId();
                 
-                // Send notification to receiver
+                // Send notification to receiver with correct link
                 $sender = getUserData($user_id);
-                $notification = t('notification_message') . ' from ' . $sender['first_name'] . ' ' . $sender['last_name'];
-                createNotification($receiver_id, 'message', $notification, '/interntrack/' . ($user_role === 'supervisor' ? 'supervisor' : 'intern') . '/chat.php');
+                
+                // Determine the correct chat URL based on receiver's role
+                $receiver_data = getUserData($receiver_id);
+                $receiver_role = $receiver_data['role'] ?? 'intern';
+                
+                // Build the correct link
+                if ($receiver_role === 'supervisor') {
+                    $chat_link = '/interntrack/intern/chat.php?user_id=' . $user_id;
+                } else {
+                    $chat_link = '/interntrack/supervisor/chat.php?user_id=' . $user_id;
+                }
+                
+                // Create notification with proper sender name and link
+                $sender_name = $sender['first_name'] . ' ' . $sender['last_name'];
+                $notification_message = t('notification_message', ['sender' => $sender_name]);
+                createNotification($receiver_id, 'message', $notification_message, $chat_link);
                 
                 echo json_encode(['success' => true, 'message_id' => $message_id]);
             } else {

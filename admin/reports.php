@@ -1,6 +1,7 @@
 <?php
 require_once '../config/config.php';
 require_once '../config/language.php';
+require_once './admin/export_functions.php';
 
 global $conn;
 
@@ -83,14 +84,16 @@ $stmt = $conn->query("SELECT id, first_name, last_name FROM users WHERE role = '
 $supervisors = $stmt->fetchAll();
 
 // Export functionality
-if ($export_format === 'pdf') {
-    // Generate PDF (using a simple HTML to PDF approach)
-    header('Content-Type: application/pdf');
-    header('Content-Disposition: attachment; filename="intern_report.pdf"');
-    // ... PDF generation code
+if (! empty ($export_format)) {
+    require_once '../config/export_functions.php';
+    if ($export_format === 'pdf') {
+        exportReportPDF($report_data, $start_date, $end_date, $total_hours, $avg_hours);
+        exit;
+        // ... PDF generation code
+    }
 } elseif ($export_format === 'excel') {
-    header('Content-Type: application/vnd.ms-excel');
-    header('Content-Disposition: attachment; filename="intern_report.xls"');
+    exportReportExcel($report_data, $start_date, $end_date, $total_hours, $avg_hours);
+    exit;
     // ... Excel generation code
 }
 

@@ -1,0 +1,343 @@
+<?php
+// admin/export_functions.php
+// This file contains export functions for PDF and Excel
+
+// Include dompdf autoloader at the top of the file
+require_once __DIR__ . '/../includes/dompdf/autoload.inc.php';
+
+use Dompdf\Dompdf;
+use Dompdf\Options;
+
+/**
+ * Export timelogs to PDF
+ */
+function exportTimelogsPDF($timelogs, $date_from, $date_to, $total_hours, $total_days, $total_interns, $avg_hours) {
+    // Set headers for PDF download
+    header('Content-Type: application/pdf');
+    header('Content-Disposition: attachment; filename="timelogs_' . date('Y-m-d') . '.pdf"');
+    
+    // Create PDF content
+    $html = '<!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Time Logs Report</title>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            h1 { color: #D32F2F; text-align: center; border-bottom: 2px solid #D32F2F; padding-bottom: 10px; }
+            .header-info { margin-bottom: 20px; }
+            .header-info table { width: 100%; }
+            .header-info td { padding: 5px; }
+            table { width: 100%; border-collapse: collapse; font-size: 11px; }
+            th { background: #D32F2F; color: white; padding: 8px 10px; text-align: left; }
+            td { padding: 6px 10px; border-bottom: 1px solid #ddd; }
+            tr:nth-child(even) { background: #f9f9f9; }
+            .summary { margin-top: 20px; background: #f5f5f5; padding: 15px; border-radius: 5px; }
+            .summary table { width: auto; margin: 0 auto; }
+            .summary td { padding: 5px 15px; border: none; }
+            .footer { text-align: center; margin-top: 30px; font-size: 11px; color: #999; border-top: 1px solid #ddd; padding-top: 15px; }
+            .status-active { color: #16a34a; font-weight: bold; }
+            .status-completed { color: #3b82f6; font-weight: bold; }
+            .status-missed { color: #dc2626; font-weight: bold; }
+        </style>
+    </head>
+    <body>
+        <h1>' . t('app_name') . ' - ' . t('time_logs_report') . '</h1>
+        
+        <div class="header-info">
+            <table>
+                <tr>
+                    <td><strong>' . t('date_range') . ':</strong> ' . date('M d, Y', strtotime($date_from)) . ' - ' . date('M d, Y', strtotime($date_to)) . '</td>
+                    <td><strong>' . t('generated_on') . ':</strong> ' . date('M d, Y H:i') . '</td>
+                </tr>
+                <tr>
+                    <td><strong>' . t('total_records') . ':</strong> ' . count($timelogs) . '</td>
+                    <td><strong>' . t('total_hours') . ':</strong> ' . number_format($total_hours, 2) . '</td>
+                </tr>
+            </table>
+        </div>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>' . t('intern') . '</th>
+                    <th>' . t('date') . '</th>
+                    <th>' . t('clock_in') . '</th>
+                    <th>' . t('clock_out') . '</th>
+                    <th>' . t('break_start') . '</th>
+                    <th>' . t('break_end') . '</th>
+                    <th>' . t('break_duration') . '</th>
+                    <th>' . t('total_hours') . '</th>
+                    <th>' . t('status') . '</th>
+                </tr>
+            </thead>
+            <tbody>';
+    
+    foreach ($timelogs as $log) {
+        $status_class = 'status-' . $log['status'];
+        $html .= '<tr>
+            <td>' . htmlspecialchars($log['first_name'] . ' ' . $log['last_name']) . '</td>
+            <td>' . date('M d, Y', strtotime($log['date'])) . '</td>
+            <td>' . ($log['clock_in'] ? formatTime($log['clock_in']) : '-') . '</td>
+            <td>' . ($log['clock_out'] ? formatTime($log['clock_out']) : '-') . '</td>
+            <td>' . ($log['break_start'] ? formatTime($log['break_start']) : '-') . '</td>
+            <td>' . ($log['break_end'] ? formatTime($log['break_end']) : '-') . '</td>
+            <td>' . ($log['total_break_minutes'] ?? 0) . ' min</td>
+            <td><strong>' . number_format($log['total_hours'], 2) . '</strong></td>
+            <td class="' . $status_class . '">' . ucfirst($log['status']) . '</td>
+        </tr>';
+    }
+    
+    $html .= '</tbody>
+        </table>
+        
+        <div class="summary">
+            <table>
+                <tr>
+                    <td><strong>' . t('summary') . ':</strong></td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td>' . t('total_records') . ':</td>
+                    <td>' . count($timelogs) . '</td>
+                </tr>
+                <tr>
+                    <td>' . t('total_hours') . ':</td>
+                    <td>' . number_format($total_hours, 2) . ' hrs</td>
+                </tr>
+                <tr>
+                    <td>' . t('total_days') . ':</td>
+                    <td>' . $total_days . '</td>
+                </tr>
+                <tr>
+                    <td>' . t('interns_logged') . ':</td>
+                    <td>' . $total_interns . '</td>
+                </tr>
+                <tr>
+                    <td>' . t('avg_hours_per_day') . ':</td>
+                    <td>' . number_format($avg_hours, 2) . ' hrs</td>
+                </tr>
+            </table>
+        </div>
+        
+        <div class="footer">
+            <p>' . t('generated_by') . ' ' . t('app_name') . ' | ' . date('Y') . ' &copy; ' . t('all_rights_reserved') . '</p>
+        </div>
+    </body>
+    </html>';
+    
+    // Convert HTML to PDF using dompdf
+    $options = new Options();
+    $options->set('defaultFont', 'Arial');
+    $options->set('isHtml5ParserEnabled', true);
+    $options->set('isRemoteEnabled', true);
+    
+    $dompdf = new Dompdf($options);
+    $dompdf->loadHtml($html);
+    $dompdf->setPaper('A4', 'landscape');
+    $dompdf->render();
+    $dompdf->stream('timelogs_' . date('Y-m-d') . '.pdf', array('Attachment' => true));
+}
+
+/**
+ * Export timelogs to Excel (CSV)
+ */
+function exportTimelogsExcel($timelogs, $date_from, $date_to, $total_hours, $total_days, $total_interns, $avg_hours) {
+    // Set headers for Excel download (CSV)
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename="timelogs_' . date('Y-m-d') . '.csv"');
+    
+    // Create output stream
+    $output = fopen('php://output', 'w');
+    
+    // Add BOM for UTF-8
+    fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
+    
+    // Add header row
+    fputcsv($output, [
+        t('intern'),
+        t('date'),
+        t('clock_in'),
+        t('clock_out'),
+        t('break_start'),
+        t('break_end'),
+        t('break_duration'),
+        t('total_hours'),
+        t('status')
+    ]);
+    
+    // Add data rows
+    foreach ($timelogs as $log) {
+        fputcsv($output, [
+            $log['first_name'] . ' ' . $log['last_name'],
+            date('Y-m-d', strtotime($log['date'])),
+            $log['clock_in'] ? date('H:i', strtotime($log['clock_in'])) : '-',
+            $log['clock_out'] ? date('H:i', strtotime($log['clock_out'])) : '-',
+            $log['break_start'] ? date('H:i', strtotime($log['break_start'])) : '-',
+            $log['break_end'] ? date('H:i', strtotime($log['break_end'])) : '-',
+            ($log['total_break_minutes'] ?? 0) . ' min',
+            number_format($log['total_hours'], 2),
+            ucfirst($log['status'])
+        ]);
+    }
+    
+    // Add empty row
+    fputcsv($output, []);
+    
+    // Add summary
+    fputcsv($output, [t('summary')]);
+    fputcsv($output, [t('total_records'), count($timelogs)]);
+    fputcsv($output, [t('total_hours'), number_format($total_hours, 2) . ' hrs']);
+    fputcsv($output, [t('total_days'), $total_days]);
+    fputcsv($output, [t('interns_logged'), $total_interns]);
+    fputcsv($output, [t('avg_hours_per_day'), number_format($avg_hours, 2) . ' hrs']);
+    fputcsv($output, [t('date_range'), date('Y-m-d', strtotime($date_from)) . ' - ' . date('Y-m-d', strtotime($date_to))]);
+    fputcsv($output, [t('generated_on'), date('Y-m-d H:i:s')]);
+    
+    fclose($output);
+}
+
+/**
+ * Export report to PDF
+ */
+function exportReportPDF($report_data, $start_date, $end_date, $total_hours, $avg_hours) {
+    header('Content-Type: application/pdf');
+    header('Content-Disposition: attachment; filename="report_' . date('Y-m-d') . '.pdf"');
+    
+    $html = '<!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Internship Report</title>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            h1 { color: #D32F2F; text-align: center; border-bottom: 2px solid #D32F2F; padding-bottom: 10px; }
+            .header-info { margin-bottom: 20px; }
+            .header-info table { width: 100%; }
+            .header-info td { padding: 5px; }
+            table { width: 100%; border-collapse: collapse; font-size: 11px; }
+            th { background: #D32F2F; color: white; padding: 8px 10px; text-align: left; }
+            td { padding: 6px 10px; border-bottom: 1px solid #ddd; }
+            tr:nth-child(even) { background: #f9f9f9; }
+            .summary { margin-top: 20px; background: #f5f5f5; padding: 15px; border-radius: 5px; }
+            .summary table { width: auto; margin: 0 auto; }
+            .summary td { padding: 5px 15px; border: none; }
+            .footer { text-align: center; margin-top: 30px; font-size: 11px; color: #999; border-top: 1px solid #ddd; padding-top: 15px; }
+        </style>
+    </head>
+    <body>
+        <h1>' . t('app_name') . ' - ' . t('internship_report') . '</h1>
+        
+        <div class="header-info">
+            <table>
+                <tr>
+                    <td><strong>' . t('date_range') . ':</strong> ' . date('M d, Y', strtotime($start_date)) . ' - ' . date('M d, Y', strtotime($end_date)) . '</td>
+                    <td><strong>' . t('generated_on') . ':</strong> ' . date('M d, Y H:i') . '</td>
+                </tr>
+            </table>
+        </div>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>' . t('intern') . '</th>
+                    <th>' . t('school') . '</th>
+                    <th>' . t('total_hours') . '</th>
+                    <th>' . t('days_worked') . '</th>
+                    <th>' . t('avg_hours_per_day') . '</th>
+                    <th>' . t('completed') . '</th>
+                    <th>' . t('missed') . '</th>
+                    <th>' . t('active') . '</th>
+                </tr>
+            </thead>
+            <tbody>';
+    
+    foreach ($report_data as $data) {
+        $html .= '<tr>
+            <td>' . htmlspecialchars($data['first_name'] . ' ' . $data['last_name']) . '</td>
+            <td>' . htmlspecialchars($data['school'] ?? 'N/A') . '</td>
+            <td><strong>' . number_format($data['total_hours'], 2) . '</strong></td>
+            <td>' . $data['days_worked'] . '</td>
+            <td>' . number_format($data['avg_hours'] ?? 0, 1) . '</td>
+            <td>' . $data['completed_days'] . '</td>
+            <td>' . $data['missed_days'] . '</td>
+            <td>' . $data['active_days'] . '</td>
+        </tr>';
+    }
+    
+    $html .= '</tbody>
+        </table>
+        
+        <div class="summary">
+            <table>
+                <tr><td colspan="2"><strong>' . t('summary') . ':</strong></td></tr>
+                <tr><td>' . t('total_interns') . ':</td><td>' . count($report_data) . '</td></tr>
+                <tr><td>' . t('total_hours') . ':</td><td>' . number_format($total_hours, 2) . ' hrs</td></tr>
+                <tr><td>' . t('avg_hours_per_intern') . ':</td><td>' . number_format($avg_hours, 1) . ' hrs</td></tr>
+                <tr><td>' . t('date_range') . ':</td><td>' . date('M d, Y', strtotime($start_date)) . ' - ' . date('M d, Y', strtotime($end_date)) . '</td></tr>
+            </table>
+        </div>
+        
+        <div class="footer">
+            <p>' . t('generated_by') . ' ' . t('app_name') . ' | ' . date('Y') . ' &copy; ' . t('all_rights_reserved') . '</p>
+        </div>
+    </body>
+    </html>';
+    
+    $options = new Options();
+    $options->set('defaultFont', 'Arial');
+    $options->set('isHtml5ParserEnabled', true);
+    $options->set('isRemoteEnabled', true);
+    
+    $dompdf = new Dompdf($options);
+    $dompdf->loadHtml($html);
+    $dompdf->setPaper('A4', 'landscape');
+    $dompdf->render();
+    $dompdf->stream('report_' . date('Y-m-d') . '.pdf', array('Attachment' => true));
+}
+
+/**
+ * Export report to Excel (CSV)
+ */
+function exportReportExcel($report_data, $start_date, $end_date, $total_hours, $avg_hours) {
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename="report_' . date('Y-m-d') . '.csv"');
+    
+    $output = fopen('php://output', 'w');
+    fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
+    
+    fputcsv($output, [
+        t('intern'),
+        t('school'),
+        t('total_hours'),
+        t('days_worked'),
+        t('avg_hours_per_day'),
+        t('completed'),
+        t('missed'),
+        t('active')
+    ]);
+    
+    foreach ($report_data as $data) {
+        fputcsv($output, [
+            $data['first_name'] . ' ' . $data['last_name'],
+            $data['school'] ?? 'N/A',
+            number_format($data['total_hours'], 2),
+            $data['days_worked'],
+            number_format($data['avg_hours'] ?? 0, 1),
+            $data['completed_days'],
+            $data['missed_days'],
+            $data['active_days']
+        ]);
+    }
+    
+    fputcsv($output, []);
+    fputcsv($output, [t('summary')]);
+    fputcsv($output, [t('total_interns'), count($report_data)]);
+    fputcsv($output, [t('total_hours'), number_format($total_hours, 2) . ' hrs']);
+    fputcsv($output, [t('avg_hours_per_intern'), number_format($avg_hours, 1) . ' hrs']);
+    fputcsv($output, [t('date_range'), date('Y-m-d', strtotime($start_date)) . ' - ' . date('Y-m-d', strtotime($end_date))]);
+    fputcsv($output, [t('generated_on'), date('Y-m-d H:i:s')]);
+    
+    fclose($output);
+}
+?>

@@ -9,6 +9,8 @@ if (isLoggedIn()) {
     exit;
 }
 
+
+
 $error = '';
 $success = '';
 
@@ -279,7 +281,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <button type="button" class="toggle-btn" onclick="togglePassword('password')" aria-label="Toggle password visibility">
                             👁️
                         </button>
-                        <small style="font-size: 12px; color: var(--secondary-text);">At least 8 characters</small>
+                        <small style="font-size: 12px; color: var(--secondary-text);"><?php echo t('password_length'); ?></small>
                     </div>
                     <div class="form-group password-toggle">
                         <label for="confirm_password"><?php echo t('confirm_password'); ?></label>
@@ -364,6 +366,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         field.setAttribute('type', type);
         const btn = field.parentElement.querySelector('.toggle-btn');
         btn.textContent = type === 'password' ? '👁️' : '👁️‍🗨️';
+    }
+
+    function switchLanguage(lang) {
+        fetch('/interntrack/api/settings.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ action: 'language', language: lang })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
     }
 
     // Auto-calculate end date based on start date and duration

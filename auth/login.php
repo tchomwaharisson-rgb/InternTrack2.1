@@ -247,9 +247,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <p style="margin-top: 8px;"><a href="/interntrack/auth/forgot_password.php"><?php echo t('forgot_password'); ?></a></p>
             </div>
             
-            <div class="language-switcher" style="justify-content: center; margin-top: 20px;">
-                <button class="<?php echo ($_SESSION['language'] ?? 'en') === 'en' ? 'active' : ''; ?>" data-lang="en">🇬🇧 EN</button>
-                <button class="<?php echo ($_SESSION['language'] ?? 'en') === 'fr' ? 'active' : ''; ?>" data-lang="fr">🇫🇷 FR</button>
+            <div class="language-switcher" style="justify-content: center; margin-top: 16px;">
+                <button class="<?php echo ($_SESSION['language'] ?? 'en') === 'en' ? 'active' : ''; ?>" onclick="switchLanguage('en')">EN</button>
+                <button class="<?php echo ($_SESSION['language'] ?? 'en') === 'fr' ? 'active' : ''; ?>" onclick="switchLanguage('fr')">FR</button>
             </div>
         </div>
     </div>
@@ -263,6 +263,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Change button text/icon
         const btn = field.parentElement.querySelector('.toggle-btn');
         btn.textContent = type === 'password' ? '👁️' : '👁️‍🗨️';
+    }
+    function switchLanguage(lang) {
+        fetch('/interntrack/api/settings.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ action: 'language', language: lang })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
     }
     
     // Language switcher

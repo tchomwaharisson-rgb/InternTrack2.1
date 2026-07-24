@@ -80,12 +80,12 @@ include_once '../includes/header.php';
             </div>
             <div class="form-row">
                 <div class="form-group">
-                    <label for="daily_work_hours">Daily Work Hours</label>
+                    <label for="daily_work_hours"><?php echo t('daily_work_hours'); ?></label>
                     <input type="number" id="daily_work_hours" name="daily_work_hours" class="form-control" 
                            value="<?php echo $daily_work_hours; ?>" min="1" max="12" step="0.5" required>
                 </div>
                 <div class="form-group">
-                    <label for="max_weekly_hours">Maximum Weekly Hours</label>
+                    <label for="max_weekly_hours"><?php echo t('max_weekly_hours'); ?></label>
                     <input type="number" id="max_weekly_hours" name="max_weekly_hours" class="form-control" 
                            value="<?php echo $max_weekly_hours; ?>" min="1" max="80" required>
                 </div>
@@ -109,25 +109,25 @@ include_once '../includes/header.php';
                 <label for="max_break_minutes"><?php echo t('max_break_duration'); ?> (minutes)</label>
                 <input type="number" id="max_break_minutes" name="max_break_minutes" class="form-control" 
                        value="<?php echo $max_break_minutes; ?>" min="1" max="240" required>
-                <small style="color: var(--secondary-text);">Maximum break duration before alert is triggered</small>
+                <small style="color: var(--secondary-text);"><?php echo t('max_break_duration_help'); ?></small>
             </div>
             
             <!-- Reminder Settings -->
             <h4 style="margin: 24px 0 16px;"><?php echo t('reminder_settings'); ?></h4>
             <div class="form-group">
-                <label for="clock_in_reminder_time">Clock-in Reminder Time</label>
+                <label for="clock_in_reminder_time"><?php echo t('clock_in_reminder_time'); ?></label>
                 <input type="time" id="clock_in_reminder_time" name="clock_in_reminder_time" class="form-control" 
                        value="<?php echo $clock_in_reminder_time; ?>" required>
-                <small style="color: var(--secondary-text);">Time when interns receive a reminder to clock in</small>
+                <small style="color: var(--secondary-text);"><?php echo t('clock_in_reminder_time_help'); ?></small>
             </div>
             
             <!-- Notification Settings -->
             <h4 style="margin: 24px 0 16px;"><?php echo t('notification_settings'); ?></h4>
             <div class="form-group">
-                <label for="notification_email">Notification Email</label>
+                <label for="notification_email"><?php echo t('notification_email'); ?></label>
                 <input type="email" id="notification_email" name="notification_email" class="form-control" 
                        value="<?php echo $notification_email; ?>" required>
-                <small style="color: var(--secondary-text);">Email address for system notifications</small>
+                <small style="color: var(--secondary-text);"><?php echo t('notification_email_help'); ?></small>
             </div>
             
             <!-- System Settings -->
@@ -135,16 +135,16 @@ include_once '../includes/header.php';
             <div class="form-group">
                 <label style="display: flex; align-items: center; gap: 8px;">
                     <input type="checkbox" name="allow_early_clock_in" <?php echo $allow_early_clock_in ? 'checked' : ''; ?>>
-                    Allow Early Clock-in
+                    <?php echo t('allow_early_clock_in'); ?>
                 </label>
-                <small style="color: var(--secondary-text);">Allow interns to clock in before the official start time</small>
+                <small style="color: var(--secondary-text);"><?php echo t('allow_early_clock_in_help'); ?></small>
             </div>
             <div class="form-group">
                 <label style="display: flex; align-items: center; gap: 8px;">
                     <input type="checkbox" name="maintenance_mode" <?php echo $maintenance_mode ? 'checked' : ''; ?>>
                     <?php echo t('maintenance_mode'); ?>
                 </label>
-                <small style="color: var(--secondary-text);">When enabled, only admins can access the system</small>
+                <small style="color: var(--secondary-text);"><?php echo t('maintenance_mode_help'); ?></small>
             </div>
             
             <button type="submit" class="btn btn-primary"><?php echo t('save_settings'); ?></button>
@@ -154,23 +154,23 @@ include_once '../includes/header.php';
     <!-- System Information -->
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">System Information</h3>
+            <h3 class="card-title"><?php echo t('system_information'); ?></h3>
         </div>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
             <div>
-                <strong>PHP Version</strong>
+                <strong><?php echo t('php_version'); ?></strong>
                 <div><?php echo phpversion(); ?></div>
             </div>
             <div>
-                <strong>MySQL Version</strong>
+                <strong><?php echo t('mysql_version'); ?></strong>
                 <div><?php echo $conn->getAttribute(PDO::ATTR_SERVER_VERSION); ?></div>
             </div>
             <div>
-                <strong>Server</strong>
+                <strong><?php echo t('server'); ?></strong>
                 <div><?php echo $_SERVER['SERVER_SOFTWARE'] ?? 'Unknown'; ?></div>
             </div>
             <div>
-                <strong>Server Time</strong>
+                <strong><?php echo t('server_time'); ?></strong>
                 <div><?php echo date('Y-m-d H:i:s'); ?></div>
             </div>
         </div>

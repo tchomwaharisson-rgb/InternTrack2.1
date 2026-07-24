@@ -1,5 +1,4 @@
 <?php
-// config/language.php - Main Language Loader
 
 // Load language files
 $lang_files = [
@@ -8,7 +7,7 @@ $lang_files = [
 ];
 
 // Default language
-$default_lang = 'en';
+$default_lang = 'fr';
 
 // Get current language from session or default
 $current_lang = $_SESSION['language'] ?? $default_lang;
@@ -42,27 +41,6 @@ function t($key, $params = []) {
     return $text;
 }
 
-/**
- * Get available languages
- * @return array Array of language codes and names
- */
-// function getAvailableLanguages() {
-//     return ['en' => 'English', 'fr' => 'Français'];
-// }
-
-/**
- * Get current language
- * @return string Current language code
- */
-// function getCurrentLanguage() {
-//     return $_SESSION['language'] ?? 'en';
-// }
-
-/**
- * Time ago function
- * @param string $datetime The datetime string
- * @return string Human readable time difference
- */
 function timeAgo($datetime) {
     $time = strtotime($datetime);
     $now = time();

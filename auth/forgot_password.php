@@ -5,7 +5,6 @@ require_once '../config/language.php';
 
 global $conn;
 
-// If user is already logged in, redirect to dashboard
 if (isLoggedIn()) {
     header('Location: /interntrack/dashboard.php');
     exit;
@@ -14,7 +13,7 @@ if (isLoggedIn()) {
 $message = '';
 $message_type = '';
 $success = false;
-$step = isset($_GET['step']) ? $_GET['step'] : 'request'; // request | reset
+$step = isset($_GET['step']) ? $_GET['step'] : 'request';
 
 // Handle password reset request
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
@@ -57,7 +56,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                             .header { background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
                             .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; }
                             .button { display: inline-block; background: #dc2626; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: 600; }
-                            .button:hover { background: #b91c1c; }
                             .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #999; }
                         </style>
                     </head>
@@ -171,14 +169,24 @@ if ($step === 'reset' && isset($_GET['token'])) {
     $token_error = t('token_required');
 }
 
+// Set default language and theme if not set
+if (!isset($_SESSION['language'])) {
+    $_SESSION['language'] = 'en';
+}
+if (!isset($_SESSION['theme'])) {
+    $_SESSION['theme'] = 'light';
+}
+
+$current_theme = $_SESSION['theme'];
 ?>
 <!DOCTYPE html>
-<html lang="<?php echo $_SESSION['language'] ?? 'en'; ?>">
+<html lang="<?php echo $_SESSION['language']; ?>" data-theme="<?php echo $current_theme; ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?php echo t('forgot_password_title'); ?> - <?php echo t('app_name'); ?></title>
     <link rel="stylesheet" href="/interntrack/assets/css/style.css">
-    <link rel="stylesheet" href="/interntrack/assets/css/dark-mode.css" disabled>
+    <link rel="stylesheet" href="/interntrack/assets/css/dark-mode.css" <?php echo $current_theme === 'dark' ? '' : 'disabled'; ?>>
     <link rel="icon" href="/interntrack/assets/images/logo-icon.png">
     <style>
         /* Auth Pages - Red Theme (Matching Login Page) */
@@ -283,6 +291,53 @@ if ($step === 'reset' && isset($_GET['token'])) {
             box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
         }
 
+        .password-toggle {
+            position: relative;
+        }
+
+        .password-toggle .toggle-btn {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            color: var(--gray-400);
+            padding: 4px;
+            transition: all var(--transition-speed);
+            line-height: 1;
+        }
+
+        .password-toggle .toggle-btn:hover {
+            color: var(--primary-color);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .password-toggle .toggle-btn:focus {
+            outline: none;
+        }
+
+        .password-toggle .form-control {
+            padding-right: 44px;
+        }
+
+        .password-requirements {
+            font-size: 12px;
+            color: var(--gray-500);
+            margin-top: 4px;
+            line-height: 1.6;
+        }
+
+        .password-requirements .valid {
+            color: #16a34a;
+        }
+
+        .password-requirements .invalid {
+            color: #dc2626;
+        }
+
         .btn {
             display: inline-flex;
             align-items: center;
@@ -357,52 +412,25 @@ if ($step === 'reset' && isset($_GET['token'])) {
             border: 1px solid var(--red-200);
         }
 
-        /* Password Toggle */
-        .password-toggle {
-            position: relative;
+        .success-page {
+            text-align: center;
+            padding: 20px 0;
         }
 
-        .password-toggle .toggle-btn {
-            position: absolute;
-            right: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 18px;
-            color: var(--gray-400);
-            padding: 4px;
-            transition: all var(--transition-speed);
-            line-height: 1;
+        .success-page .success-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
         }
 
-        .password-toggle .toggle-btn:hover {
-            color: var(--primary-color);
-            transform: translateY(-50%) scale(1.1);
+        .success-page h3 {
+            font-size: 20px;
+            margin-bottom: 8px;
+            color: var(--gray-800);
         }
 
-        .password-toggle .toggle-btn:focus {
-            outline: none;
-        }
-
-        .password-toggle .form-control {
-            padding-right: 44px;
-        }
-
-        .password-requirements {
-            font-size: 12px;
+        .success-page p {
             color: var(--gray-500);
-            margin-top: 4px;
-            line-height: 1.6;
-        }
-
-        .password-requirements .valid {
-            color: #16a34a;
-        }
-
-        .password-requirements .invalid {
-            color: #dc2626;
+            margin-top: 8px;
         }
 
         .language-switcher {
@@ -522,34 +550,21 @@ if ($step === 'reset' && isset($_GET['token'])) {
             color: #9ca3af;
         }
 
-        /* Success page styling */
-        .success-page {
-            text-align: center;
-            padding: 20px 0;
-        }
-
-        .success-page .success-icon {
-            font-size: 48px;
-            margin-bottom: 16px;
-        }
-
-        .success-page h3 {
-            font-size: 20px;
-            margin-bottom: 8px;
-            color: var(--gray-800);
-        }
-
-        .success-page p {
-            color: var(--gray-500);
-            margin-top: 8px;
-        }
-
         body.dark-mode .success-page h3 {
             color: #f3f4f6;
         }
 
         body.dark-mode .success-page p {
             color: #9ca3af;
+        }
+
+        @media (max-width: 480px) {
+            .auth-body {
+                padding: 24px;
+            }
+            .auth-header {
+                padding: 24px;
+            }
         }
     </style>
 </head>
@@ -558,117 +573,18 @@ if ($step === 'reset' && isset($_GET['token'])) {
         <div class="auth-card">
             <div class="auth-header">
                 <div class="auth-logo">
-                    <a href="/interntrack/" class="header-brand">
-                        <!DOCTYPE html>
-                        <html>
-                        <head>
-                        <style>
-                            .logo-option1 {
-                                display: flex;
-                                align-items: center;
-                                gap: 12px;
-                                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                                text-decoration: none;
-                            }
-                            .logo-option1 .logo-icon {
-                                position: relative;
-                                width: 48px;
-                                height: 48px;
-                                background: linear-gradient(135deg, #D32F2F 0%, #B71C1C 100%);
-                                border-radius: 12px;
-                                display: flex;
-                                align-items: center;
-                                justify-content: center;
-                                box-shadow: 0 4px 15px rgba(211, 47, 47, 0.3);
-                                transition: transform 0.3s ease;
-                            }
-                            .logo-option1 .logo-icon:hover {
-                                transform: scale(1.05);
-                            }
-                            .logo-option1 .logo-icon .letter {
-                                color: white;
-                                font-size: 24px;
-                                font-weight: 800;
-                                letter-spacing: -1px;
-                                position: relative;
-                                z-index: 2;
-                            }
-                            .logo-option1 .logo-icon .track-line {
-                                position: absolute;
-                                bottom: 8px;
-                                left: 8px;
-                                right: 8px;
-                                height: 3px;
-                                background: rgba(255, 255, 255, 0.4);
-                                border-radius: 2px;
-                                overflow: hidden;
-                            }
-                            .logo-option1 .logo-icon .track-line::after {
-                                content: '';
-                                position: absolute;
-                                left: -100%;
-                                width: 50%;
-                                height: 100%;
-                                background: white;
-                                border-radius: 2px;
-                                animation: trackMove 3s ease-in-out infinite;
-                            }
-                            @keyframes trackMove {
-                                0% { left: -100%; }
-                                100% { left: 200%; }
-                            }
-                            .logo-option1 .logo-text {
-                                display: flex;
-                                flex-direction: column;
-                            }
-                            .logo-option1 .logo-text .main-text {
-                                font-size: 28px;
-                                font-weight: 800;
-                                color: #1A1A1A;
-                                line-height: 1;
-                                letter-spacing: -0.5px;
-                            }
-                            .logo-option1 .logo-text .main-text .red {
-                                color: #D32F2F;
-                            }
-                            .logo-option1 .logo-text .sub-text {
-                                font-size: 10px;
-                                font-weight: 600;
-                                color: #666;
-                                letter-spacing: 2.5px;
-                                text-transform: uppercase;
-                                margin-top: 2px;
-                            }
-                        </style>
-                        </head>
-                        <body>
-                        <a href="#" class="logo-option1">
-                            <div class="logo-icon">
-                                <span class="letter">IT</span>
-                                <div class="track-line"></div>
-                            </div>
-                            <div class="logo-text">
-                                <span class="main-text">Intern<span class="red">Track</span></span>
-                                <span class="sub-text">Management System</span>
-                            </div>
-                        </a>
-                        </body>
-                        </html>
-                    </a>
+                    <h1><?php echo t('app_name'); ?></h1>
+                    <p><?php echo t('app_description'); ?></p>
                 </div>
             </div>
             
             <div class="auth-body">
                 <?php if ($message): ?>
-                    <div class="alert alert-<?php echo $message_type; ?>">
-                        <?php echo $message; ?>
-                    </div>
+                    <div class="alert alert-<?php echo $message_type; ?>"><?php echo $message; ?></div>
                 <?php endif; ?>
                 
                 <?php if ($token_error): ?>
-                    <div class="alert alert-danger">
-                        <?php echo $token_error; ?>
-                    </div>
+                    <div class="alert alert-danger"><?php echo $token_error; ?></div>
                 <?php endif; ?>
                 
                 <?php if ($success && $step === 'request'): ?>
@@ -699,14 +615,14 @@ if ($step === 'reset' && isset($_GET['token'])) {
                     <h2><?php echo t('reset_password'); ?></h2>
                     <p class="auth-subtitle"><?php echo t('reset_password_subtitle'); ?></p>
                     
-                    <form method="POST" action="" id="resetForm" class="auth-form">
+                    <form method="POST" action="" class="auth-form">
                         <input type="hidden" name="action" value="reset_password">
                         <input type="hidden" name="token" value="<?php echo htmlspecialchars($_GET['token'] ?? ''); ?>">
                         
                         <div class="form-group password-toggle">
                             <label for="password"><?php echo t('new_password'); ?></label>
                             <input type="password" id="password" name="password" class="form-control" required minlength="8" 
-                                   onkeyup="validatePassword(this.value)">
+                                   placeholder="<?php echo t('enter_new_password'); ?>" onkeyup="validatePassword(this.value)">
                             <button type="button" class="toggle-btn" onclick="togglePassword('password')" aria-label="Toggle password visibility">
                                 👁️
                             </button>
@@ -720,7 +636,8 @@ if ($step === 'reset' && isset($_GET['token'])) {
                         
                         <div class="form-group password-toggle">
                             <label for="confirm_password"><?php echo t('confirm_new_password'); ?></label>
-                            <input type="password" id="confirm_password" name="confirm_password" class="form-control" required>
+                            <input type="password" id="confirm_password" name="confirm_password" class="form-control" required 
+                                   placeholder="<?php echo t('confirm_password_placeholder'); ?>">
                             <button type="button" class="toggle-btn" onclick="togglePassword('confirm_password')" aria-label="Toggle password visibility">
                                 👁️
                             </button>
@@ -782,17 +699,14 @@ if ($step === 'reset' && isset($_GET['token'])) {
     </div>
 
     <script>
-    // Toggle password visibility
     function togglePassword(fieldId) {
         const field = document.getElementById(fieldId);
         const type = field.getAttribute('type') === 'password' ? 'text' : 'password';
         field.setAttribute('type', type);
-        
         const btn = field.parentElement.querySelector('.toggle-btn');
         btn.textContent = type === 'password' ? '👁️' : '👁️‍🗨️';
     }
 
-    // Password validation
     function validatePassword(password) {
         const requirements = {
             length: password.length >= 8,
@@ -824,6 +738,24 @@ if ($step === 'reset' && isset($_GET['token'])) {
         }
     });
 
+    // Form validation
+    document.getElementById('resetForm')?.addEventListener('submit', function(e) {
+        const password = document.getElementById('password');
+        const confirmPassword = document.getElementById('confirm_password');
+        
+        if (password.value.length < 8) {
+            e.preventDefault();
+            alert('<?php echo t('password_too_short'); ?>');
+            return false;
+        }
+        
+        if (password.value !== confirmPassword.value) {
+            e.preventDefault();
+            alert('<?php echo t('password_mismatch'); ?>');
+            return false;
+        }
+    });
+
     // Language switcher
     document.querySelectorAll('.language-switcher button').forEach(btn => {
         btn.addEventListener('click', function() {
@@ -849,25 +781,7 @@ if ($step === 'reset' && isset($_GET['token'])) {
         });
     });
 
-    // Form validation
-    document.getElementById('resetForm')?.addEventListener('submit', function(e) {
-        const password = document.getElementById('password');
-        const confirmPassword = document.getElementById('confirm_password');
-        
-        if (password.value.length < 8) {
-            e.preventDefault();
-            alert('<?php echo t('password_too_short'); ?>');
-            return false;
-        }
-        
-        if (password.value !== confirmPassword.value) {
-            e.preventDefault();
-            alert('<?php echo t('password_mismatch'); ?>');
-            return false;
-        }
-    });
-
-    // Initialize dark mode class on body
+    // Initialize dark mode
     document.addEventListener('DOMContentLoaded', function() {
         const theme = document.documentElement.getAttribute('data-theme') || 'light';
         if (theme === 'dark') {
