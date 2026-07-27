@@ -6,14 +6,14 @@ global $conn;
 
 header('Content-Type: application/json');
 
-if (!isLoggedIn()) {
-    echo json_encode(['success' => false, 'message' => 'Unauthorized']);
-    exit;
-}
-
-$user_id = $_SESSION['user_id'];
+$user_id = $_SESSION['user_id'] ?? null;
 $data = json_decode(file_get_contents('php://input'), true);
 $action = $data['action'] ?? '';
+
+if (!in_array($action, ['language', 'theme'], true)) {
+    echo json_encode(['success' => false, 'message' => 'Invalid action']);
+    exit;
+}
 
 switch ($action) {
     case 'language':
@@ -24,13 +24,18 @@ switch ($action) {
         }
         
         $_SESSION['language'] = $language;
+        setcookie('language', $language, time() + 60 * 60 * 24 * 365, '/', '', false, true);
         
-        // Save to database
-        $stmt = $conn->prepare("UPDATE users SET language = ? WHERE id = ?");
-        if ($stmt->execute([$language, $user_id])) {
-            echo json_encode(['success' => true]);
+        if (isLoggedIn() && $user_id !== null) {
+            // Save to database for authenticated users
+            $stmt = $conn->prepare("UPDATE users SET language = ? WHERE id = ?");
+            if ($stmt->execute([$language, $user_id])) {
+                echo json_encode(['success' => true]);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Failed to save language']);
+            }
         } else {
-            echo json_encode(['success' => false, 'message' => 'Failed to save language']);
+            echo json_encode(['success' => true]);
         }
         break;
         
@@ -43,12 +48,16 @@ switch ($action) {
         
         $_SESSION['theme'] = $theme;
         
-        // Save to database
-        $stmt = $conn->prepare("UPDATE users SET theme = ? WHERE id = ?");
-        if ($stmt->execute([$theme, $user_id])) {
-            echo json_encode(['success' => true]);
+        if (isLoggedIn() && $user_id !== null) {
+            // Save to database for authenticated users
+            $stmt = $conn->prepare("UPDATE users SET theme = ? WHERE id = ?");
+            if ($stmt->execute([$theme, $user_id])) {
+                echo json_encode(['success' => true]);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Failed to save theme']);
+            }
         } else {
-            echo json_encode(['success' => false, 'message' => 'Failed to save theme']);
+            echo json_encode(['success' => true]);
         }
         break;
         

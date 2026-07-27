@@ -134,8 +134,8 @@ $role = $_SESSION['user_role'] ?? '';
         </div>
         <div class="header-actions">
             <div class="language-switcher">
-                <button class="<?php echo ($_SESSION['language'] ?? 'en') === 'en' ? 'active' : ''; ?>" onclick="switchLanguage('en')">EN</button>
-                <button class="<?php echo ($_SESSION['language'] ?? 'en') === 'fr' ? 'active' : ''; ?>" onclick="switchLanguage('fr')">FR</button>
+                <button class="<?php echo ($_SESSION['language'] ?? 'en') === 'en' ? 'active' : ''; ?>" data-lang="en" onclick="switchLanguage('en')">EN</button>
+                <button class="<?php echo ($_SESSION['language'] ?? 'en') === 'fr' ? 'active' : ''; ?>" data-lang="fr" onclick="switchLanguage('fr')">FR</button>
             </div>
             
             <button class="theme-toggle" title="<?php echo t('theme'); ?>" onclick="toggleTheme()">

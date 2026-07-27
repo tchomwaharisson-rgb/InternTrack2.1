@@ -96,29 +96,74 @@ function markNotificationsAsRead() {
     );
 }
 
+function getSettingsApiUrl() {
+  const path = window.location.pathname || "/";
+  return path.includes("/interntrack") ? "/interntrack/api/settings.php" : "/api/settings.php";
+}
+
+function sendSettingsRequest(action, payload) {
+  return fetch(getSettingsApiUrl(), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Requested-With": "XMLHttpRequest",
+    },
+    body: JSON.stringify({ action, ...payload }),
+  }).then(async (response) => {
+    const contentType = response.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+      return response.json();
+    }
+
+    const text = await response.text();
+    throw new Error(text || `Request failed with status ${response.status}`);
+  });
+}
+
+function getLanguageFromButton(button) {
+  const explicitLang = button.dataset.lang || button.getAttribute("data-lang");
+  if (explicitLang) {
+    return explicitLang.toLowerCase();
+  }
+
+  const onclick = button.getAttribute("onclick") || "";
+  const match = onclick.match(/switchLanguage\(\s*["']([a-z]{2})["']\s*\)/i);
+  if (match) {
+    return match[1].toLowerCase();
+  }
+
+  const label = (button.textContent || "").trim().toLowerCase();
+  if (label.includes("fr")) {
+    return "fr";
+  }
+  if (label.includes("en")) {
+    return "en";
+  }
+
+  return null;
+}
+
 // Language Switcher
 function initLanguageSwitcher() {
   document.querySelectorAll(".language-switcher button").forEach((btn) => {
     btn.addEventListener("click", function () {
-      const lang = this.dataset.lang;
+      const lang = getLanguageFromButton(this);
+      if (!lang) {
+        return;
+      }
+
       document
         .querySelectorAll(".language-switcher button")
         .forEach((b) => b.classList.remove("active"));
       this.classList.add("active");
 
       // Save language preference
-      fetch("/api/settings/language", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Requested-With": "XMLHttpRequest",
-        },
-        body: JSON.stringify({ language: lang }),
-      })
-        .then((response) => response.json())
+      sendSettingsRequest("language", { language: lang })
         .then((data) => {
           if (data.success) {
             location.reload();
+          } else {
+            console.error("Language change failed:", data.message);
           }
         })
         .catch((error) => console.error("Error changing language:", error));
@@ -136,19 +181,13 @@ function initThemeToggle() {
       const newTheme = currentTheme === "light" ? "dark" : "light";
 
       // Save theme preference
-      fetch("/api/settings/theme", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Requested-With": "XMLHttpRequest",
-        },
-        body: JSON.stringify({ theme: newTheme }),
-      })
-        .then((response) => response.json())
+      sendSettingsRequest("theme", { theme: newTheme })
         .then((data) => {
           if (data.success) {
             document.documentElement.setAttribute("data-theme", newTheme);
             updateThemeStyles(newTheme);
+          } else {
+            console.error("Theme change failed:", data.message);
           }
         })
         .catch((error) => console.error("Error changing theme:", error));

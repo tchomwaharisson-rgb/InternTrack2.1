@@ -358,11 +358,9 @@ $recent_activities = $stmt->fetchAll();
             <!-- Language Switcher -->
             <div class="language-switcher">
                 <button class="<?php echo ($_SESSION['language'] ?? 'en') === 'en' ? 'active' : ''; ?>" 
-                        onclick="switchLanguage('en')">EN</button>
-                <button class="<?php echo ($_SESSION['language'] ?? 'en') === 'fr' ? 'active' : ''; ?>" 
-                        onclick="switchLanguage('fr')">FR</button>
-            </div>
-            
+                        data-lang="en" onclick="switchLanguage('en')">EN</button>
+                <button class="<?php echo ($_SESSION['language'] ?? 'en') === 'fr' ? 'active' : ''; ?>"
+                        data-lang="fr" onclick="switchLanguage('fr')">FR</button>
             <button class="theme-toggle" title="<?php echo t('theme'); ?>">
                 <?php echo ($_SESSION['theme'] ?? 'light') === 'light' ? '🌙' : '☀️'; ?>
             </button>

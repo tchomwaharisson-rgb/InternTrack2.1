@@ -9,8 +9,16 @@ $lang_files = [
 // Default language
 $default_lang = 'fr';
 
-// Get current language from session or default
-$current_lang = $_SESSION['language'] ?? $default_lang;
+// Get current language from session, cookie, or default
+$preferred_lang = $_SESSION['language'] ?? ($_COOKIE['language'] ?? $default_lang);
+if (!in_array($preferred_lang, ['en', 'fr'], true)) {
+    $preferred_lang = $default_lang;
+}
+$current_lang = $preferred_lang;
+
+if (!isset($_SESSION['language']) || $_SESSION['language'] !== $current_lang) {
+    $_SESSION['language'] = $current_lang;
+}
 
 // Load translations
 $translations = [];

@@ -1,4 +1,4 @@
-<?php
+<!-- <?php
 // config/language.php - Complete Language File
 
 $translations = [
@@ -1714,4 +1714,4 @@ function timeAgo($datetime) {
         return date('M d, Y', $time);
     }
 }
-?>
+?> -->

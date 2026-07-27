@@ -3,8 +3,8 @@
 class Database {
     private $host = 'localhost';
     private $db_name = 'interntrack';
-    private $username = 'root';
-    private $password = '';
+     private $username = 'u2g';
+    private $password = 'u2g123';
     private $conn;
 
     public function getConnection() {

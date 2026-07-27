@@ -70,9 +70,9 @@ $conn = $db->getConnection();
 $GLOBALS['conn'] = $conn;
 
 // ============ SESSION INITIALIZATION ============
-// Set default language if not set
-if (!isset($_SESSION['language'])) {
-    $_SESSION['language'] = 'en';
+// Set default language if not set, using the persisted cookie when available
+if (!isset($_SESSION['language']) || !in_array($_SESSION['language'], ['en', 'fr'], true)) {
+    $_SESSION['language'] = $_COOKIE['language'] ?? 'en';
 }
 
 // Set default theme if not set
