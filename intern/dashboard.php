@@ -119,12 +119,12 @@ include_once '../includes/header.php';
             <div class="stat-value"><?php echo number_format($monthly_hours, 1); ?></div>
             <div class="stat-label"><?php echo t('monthly_hours'); ?></div>
         </div>
-        <div class="stat-card" style="border-left-color: #f59e0b;">
+        <div class="stat-card" style="border-left-color: #f59e0b; cursor: pointer;" onclick="window.location.href='/interntrack/intern/goals.php'">
             <div class="stat-icon">🎯</div>
             <div class="stat-value"><?php echo count($active_goals); ?></div>
             <div class="stat-label"><?php echo t('active_goals'); ?></div>
         </div>
-        <div class="stat-card" style="border-left-color: #16a34a;" onclick="window.location.href='/interntrack/intern/chat.php'">
+        <div class="stat-card" style="border-left-color: #16a34a; cursor: pointer;" onclick="window.location.href='/interntrack/intern/chat.php'">
             <div class="stat-icon">💬</div>
             <div class="stat-value"><?php echo $unread_messages; ?></div>
             <div class="stat-label"><?php echo t('unread_messages'); ?></div>
@@ -155,7 +155,7 @@ include_once '../includes/header.php';
                 </button>
             <?php endif; ?>
             
-            <a href="/interntrack/intern/timelog.php" class="btn btn-secondary">
+            <a href="/interntrack/intern/timelogs.php" class="btn btn-secondary">
                 <span>⏱️</span> <?php echo t('view_timelogs'); ?>
             </a>
             <a href="/interntrack/intern/chat.php" class="btn btn-secondary">
@@ -266,7 +266,7 @@ include_once '../includes/header.php';
     <?php if ($active_goals): ?>
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title"><?php echo t(['active_goals']); ?></h3>
+                <h3 class="card-title"><?php echo t('active_goals'); ?></h3>
                 <a href="/interntrack/intern/goals.php" class="btn btn-sm btn-secondary"><?php echo t('view_all'); ?></a>
             </div>
             <?php foreach ($active_goals as $goal): ?>

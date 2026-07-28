@@ -3,170 +3,9 @@
 require_once '../config/config.php';
 require_once '../config/language.php';
 
-global $conn;
-
 if (isLoggedIn()) {
     header('Location: /interntrack/dashboard.php');
     exit;
-}
-
-$message = '';
-$message_type = '';
-$success = false;
-$step = isset($_GET['step']) ? $_GET['step'] : 'request';
-
-// Handle password reset request
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
-    $action = $_POST['action'];
-    
-    if ($action === 'send_reset_link') {
-        $email = sanitize($_POST['email'] ?? '');
-        
-        if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $message = t('invalid_email_format');
-            $message_type = 'error';
-        } else {
-            // Check if user exists
-            $stmt = $conn->prepare("SELECT id, first_name, last_name FROM users WHERE email = ?");
-            $stmt->execute([$email]);
-            $user = $stmt->fetch(PDO::FETCH_ASSOC);
-            
-            if ($user) {
-                // Generate reset token
-                $token = generateToken(64);
-                $expires = date('Y-m-d H:i:s', strtotime('+1 hour'));
-                
-                // Save token to database
-                $stmt = $conn->prepare("
-                    INSERT INTO password_resets (user_id, token, expires_at) 
-                    VALUES (?, ?, ?)
-                    ON DUPLICATE KEY UPDATE token = ?, expires_at = ?
-                ");
-                $stmt->execute([$user['id'], $token, $expires, $token, $expires]);
-                
-                // Send reset email
-                $reset_link = BASE_URL . 'auth/forgot_password.php?step=reset&token=' . $token;
-                $subject = t('reset_password_email_subject');
-                $message_body = "
-                    <html>
-                    <head>
-                        <style>
-                            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                            .header { background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
-                            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; }
-                            .button { display: inline-block; background: #dc2626; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: 600; }
-                            .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #999; }
-                        </style>
-                    </head>
-                    <body>
-                        <div class='container'>
-                            <div class='header'>
-                                <h2>" . t('app_name') . "</h2>
-                                <p>" . t('reset_password_email_header') . "</p>
-                            </div>
-                            <div class='content'>
-                                <p>" . t('reset_password_email_greeting') . " " . htmlspecialchars($user['first_name']) . ",</p>
-                                <p>" . t('reset_password_email_body') . "</p>
-                                <p style='text-align: center; margin: 30px 0;'>
-                                    <a href='" . $reset_link . "' class='button'>" . t('reset_password') . "</a>
-                                </p>
-                                <p>" . t('reset_password_email_expiry') . "</p>
-                                <p>" . t('reset_password_email_ignore') . "</p>
-                                <p style='margin-top: 20px;'>" . t('reset_password_email_regards') . "<br>" . t('app_name') . " " . t('team') . "</p>
-                            </div>
-                            <div class='footer'>
-                                <p>&copy; " . date('Y') . " " . t('app_name') . ". " . t('all_rights_reserved') . "</p>
-                            </div>
-                        </div>
-                    </body>
-                    </html>
-                ";
-                
-                if (sendEmail($email, $subject, $message_body)) {
-                    $message = t('reset_link_sent');
-                    $message_type = 'success';
-                    $success = true;
-                    logAudit($user['id'], 'password_reset_request', 'Requested password reset');
-                } else {
-                    $message = t('email_send_error');
-                    $message_type = 'error';
-                }
-            } else {
-                // Don't reveal if email exists or not for security
-                $message = t('reset_link_sent');
-                $message_type = 'success';
-                $success = true;
-            }
-        }
-    } elseif ($action === 'reset_password') {
-        $token = $_POST['token'] ?? '';
-        $password = $_POST['password'] ?? '';
-        $confirm_password = $_POST['confirm_password'] ?? '';
-        
-        if (empty($token)) {
-            $message = t('invalid_token');
-            $message_type = 'error';
-        } elseif (strlen($password) < 8) {
-            $message = t('password_too_short');
-            $message_type = 'error';
-        } elseif ($password !== $confirm_password) {
-            $message = t('password_mismatch');
-            $message_type = 'error';
-        } else {
-            // Verify token
-            $stmt = $conn->prepare("
-                SELECT user_id, expires_at FROM password_resets 
-                WHERE token = ? AND expires_at > NOW()
-            ");
-            $stmt->execute([$token]);
-            $reset = $stmt->fetch(PDO::FETCH_ASSOC);
-            
-            if ($reset) {
-                // Update password
-                $password_hash = password_hash($password, PASSWORD_DEFAULT);
-                $stmt = $conn->prepare("UPDATE users SET password = ? WHERE id = ?");
-                if ($stmt->execute([$password_hash, $reset['user_id']])) {
-                    // Delete used token
-                    $stmt = $conn->prepare("DELETE FROM password_resets WHERE token = ?");
-                    $stmt->execute([$token]);
-                    
-                    $message = t('password_reset_success');
-                    $message_type = 'success';
-                    $success = true;
-                    logAudit($reset['user_id'], 'password_reset', 'Reset password via forgot password');
-                } else {
-                    $message = t('error_occurred');
-                    $message_type = 'error';
-                }
-            } else {
-                $message = t('invalid_or_expired_token');
-                $message_type = 'error';
-            }
-        }
-    }
-}
-
-// If we're on the reset step, verify the token
-$token_valid = false;
-$token_error = '';
-if ($step === 'reset' && isset($_GET['token'])) {
-    $token = $_GET['token'];
-    
-    $stmt = $conn->prepare("
-        SELECT user_id, expires_at FROM password_resets 
-        WHERE token = ? AND expires_at > NOW()
-    ");
-    $stmt->execute([$token]);
-    $reset = $stmt->fetch(PDO::FETCH_ASSOC);
-    
-    if ($reset) {
-        $token_valid = true;
-    } else {
-        $token_error = t('invalid_or_expired_token');
-    }
-} elseif ($step === 'reset') {
-    $token_error = t('token_required');
 }
 
 // Set default language and theme if not set
@@ -189,7 +28,7 @@ $current_theme = $_SESSION['theme'];
     <link rel="stylesheet" href="/interntrack/assets/css/dark-mode.css" <?php echo $current_theme === 'dark' ? '' : 'disabled'; ?>>
     <link rel="icon" href="/interntrack/assets/images/logo-icon.png">
     <style>
-        /* Auth Pages - Red Theme (Matching Login Page) */
+        /* Auth Pages - Red Theme */
         .auth-container {
             min-height: 100vh;
             display: flex;
@@ -197,6 +36,12 @@ $current_theme = $_SESSION['theme'];
             justify-content: center;
             background: var(--red-gradient-light);
             padding: 20px;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--primary-red);
+            color: var(--gray-800);
         }
 
         .auth-card {
@@ -265,77 +110,31 @@ $current_theme = $_SESSION['theme'];
             margin-bottom: 24px;
         }
 
-        .auth-form .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            font-weight: 500;
-            margin-bottom: 6px;
-            color: var(--gray-700);
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 12px 16px;
-            border: 2px solid var(--gray-200);
+        .info-box {
+            background: var(--red-50);
+            border: 1px solid var(--red-200);
             border-radius: 8px;
-            font-size: 15px;
-            transition: border-color var(--transition-speed);
+            padding: 16px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
         }
 
-        .form-control:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+        .info-box .info-icon {
+            font-size: 24px;
+            flex-shrink: 0;
+            margin-top: 2px;
         }
 
-        .password-toggle {
-            position: relative;
-        }
-
-        .password-toggle .toggle-btn {
-            position: absolute;
-            right: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 18px;
-            color: var(--gray-400);
-            padding: 4px;
-            transition: all var(--transition-speed);
-            line-height: 1;
-        }
-
-        .password-toggle .toggle-btn:hover {
-            color: var(--primary-color);
-            transform: translateY(-50%) scale(1.1);
-        }
-
-        .password-toggle .toggle-btn:focus {
-            outline: none;
-        }
-
-        .password-toggle .form-control {
-            padding-right: 44px;
-        }
-
-        .password-requirements {
-            font-size: 12px;
-            color: var(--gray-500);
-            margin-top: 4px;
+        .info-box .info-text {
+            font-size: 14px;
+            color: var(--gray-700);
             line-height: 1.6;
         }
 
-        .password-requirements .valid {
-            color: #16a34a;
-        }
-
-        .password-requirements .invalid {
-            color: #dc2626;
+        .info-box .info-text strong {
+            color: var(--primary-color);
         }
 
         .btn {
@@ -358,13 +157,13 @@ $current_theme = $_SESSION['theme'];
         }
 
         .btn-primary {
-            background: var(--red-gradient);
+            background: var(--primary-red);
             color: white;
         }
 
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(220, 38, 38, 0.3);
+            box-shadow: 0 8px 25px rgba(253, 124, 124, 0.77);
         }
 
         .btn-secondary {
@@ -374,6 +173,18 @@ $current_theme = $_SESSION['theme'];
 
         .btn-secondary:hover {
             background: var(--gray-300);
+        }
+
+        .btn-outline {
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
+            background: transparent;
+        }
+
+        .btn-outline:hover {
+            background: var(--primary-color);
+            color: white;
+            transform: translateY(-2px);
         }
 
         .auth-footer {
@@ -393,46 +204,6 @@ $current_theme = $_SESSION['theme'];
             text-decoration: underline;
         }
 
-        .alert {
-            padding: 12px 16px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-size: 14px;
-        }
-
-        .alert-success {
-            background: #dcfce7;
-            color: #166534;
-            border: 1px solid #bbf7d0;
-        }
-
-        .alert-danger {
-            background: var(--red-100);
-            color: var(--red-900);
-            border: 1px solid var(--red-200);
-        }
-
-        .success-page {
-            text-align: center;
-            padding: 20px 0;
-        }
-
-        .success-page .success-icon {
-            font-size: 48px;
-            margin-bottom: 16px;
-        }
-
-        .success-page h3 {
-            font-size: 20px;
-            margin-bottom: 8px;
-            color: var(--gray-800);
-        }
-
-        .success-page p {
-            color: var(--gray-500);
-            margin-top: 8px;
-        }
-
         .language-switcher {
             display: flex;
             gap: 4px;
@@ -442,7 +213,7 @@ $current_theme = $_SESSION['theme'];
 
         .language-switcher button {
             background: none;
-            border: 1px solid var(--gray-300);
+            border: 1px solid black;
             padding: 4px 10px;
             border-radius: 4px;
             cursor: pointer;
@@ -452,13 +223,53 @@ $current_theme = $_SESSION['theme'];
         }
 
         .language-switcher button.active {
-            background: var(--primary-color);
+            background: var(--primary-red);
             color: white;
-            border-color: var(--primary-color);
+            border-color: var(--primary-red);
         }
 
         .language-switcher button:hover:not(.active) {
             background: var(--gray-100);
+        }
+
+        .contact-details {
+            background: white;
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin: 16px 0;
+        }
+
+        .contact-details .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--gray-100);
+        }
+
+        .contact-details .contact-item:last-child {
+            border-bottom: none;
+        }
+
+        .contact-details .contact-icon {
+            font-size: 18px;
+            width: 30px;
+            text-align: center;
+        }
+
+        .contact-details .contact-text {
+            font-size: 14px;
+            color: var(--gray-700);
+        }
+
+        .contact-details .contact-text a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .contact-details .contact-text a:hover {
+            text-decoration: underline;
         }
 
         /* Dark Mode Support */
@@ -475,17 +286,6 @@ $current_theme = $_SESSION['theme'];
             color: #f3f4f6;
         }
 
-        body.dark-mode .form-control {
-            background-color: #1a1a1a;
-            border-color: #4a1a1a;
-            color: #f3f4f6;
-        }
-
-        body.dark-mode .form-control:focus {
-            border-color: #dc2626;
-            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.2);
-        }
-
         body.dark-mode .auth-footer {
             border-top-color: #4a1a1a;
         }
@@ -494,28 +294,13 @@ $current_theme = $_SESSION['theme'];
             color: #dc2626;
         }
 
-        body.dark-mode .form-group label {
+        body.dark-mode .info-box {
+            background: #2d1a1a;
+            border-color: #4a1a1a;
+        }
+
+        body.dark-mode .info-box .info-text {
             color: #e5e7eb;
-        }
-
-        body.dark-mode .alert-success {
-            background: #0d2d0d;
-            color: #86efac;
-            border-color: #1a4a1a;
-        }
-
-        body.dark-mode .alert-danger {
-            background: #4a1515;
-            color: #fca5a5;
-            border-color: #7f1d1d;
-        }
-
-        body.dark-mode .password-toggle .toggle-btn {
-            color: #9ca3af;
-        }
-
-        body.dark-mode .password-toggle .toggle-btn:hover {
-            color: #dc2626;
         }
 
         body.dark-mode .language-switcher button {
@@ -533,6 +318,23 @@ $current_theme = $_SESSION['theme'];
             background: #3a3a3a;
         }
 
+        body.dark-mode .auth-subtitle {
+            color: #9ca3af;
+        }
+
+        body.dark-mode .contact-details {
+            background: #2d2d2d;
+            border-color: #4a1a1a;
+        }
+
+        body.dark-mode .contact-details .contact-item {
+            border-bottom-color: #4a1a1a;
+        }
+
+        body.dark-mode .contact-details .contact-text {
+            color: #e5e7eb;
+        }
+
         body.dark-mode .btn-secondary {
             background: #4a4a4a;
             color: #f3f4f6;
@@ -540,22 +342,6 @@ $current_theme = $_SESSION['theme'];
 
         body.dark-mode .btn-secondary:hover {
             background: #5a5a5a;
-        }
-
-        body.dark-mode .auth-subtitle {
-            color: #9ca3af;
-        }
-
-        body.dark-mode .password-requirements {
-            color: #9ca3af;
-        }
-
-        body.dark-mode .success-page h3 {
-            color: #f3f4f6;
-        }
-
-        body.dark-mode .success-page p {
-            color: #9ca3af;
         }
 
         @media (max-width: 480px) {
@@ -573,189 +359,185 @@ $current_theme = $_SESSION['theme'];
         <div class="auth-card">
             <div class="auth-header">
                 <div class="auth-logo">
-                    <h1><?php echo t('app_name'); ?></h1>
-                    <p><?php echo t('app_description'); ?></p>
+                    <a href="/interntrack/" class="header-brand">
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                        <style>
+                        .logo-option1 {
+                            display: flex;
+                            align-items: center;
+                            gap: 12px;
+                            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                            text-decoration: none;
+                        }
+
+                        .logo-option1 .logo-icon {
+                            position: relative;
+                            width: 48px;
+                            height: 48px;
+                            background: linear-gradient(135deg, #D32F2F 0%, #B71C1C 100%);
+                            border-radius: 12px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            box-shadow: 0 4px 15px rgba(211, 47, 47, 0.3);
+                            transition: transform 0.3s ease;
+                        }
+
+                        .logo-option1 .logo-icon:hover {
+                            transform: scale(1.05);
+                        }
+
+                        .logo-option1 .logo-icon .letter {
+                            color: white;
+                            font-size: 24px;
+                            font-weight: 800;
+                            letter-spacing: -1px;
+                            position: relative;
+                            z-index: 2;
+                        }
+
+                        .logo-option1 .logo-icon .track-line {
+                            position: absolute;
+                            bottom: 8px;
+                            left: 8px;
+                            right: 8px;
+                            height: 3px;
+                            background: rgba(255, 255, 255, 0.4);
+                            border-radius: 2px;
+                            overflow: hidden;
+                        }
+
+                        .logo-option1 .logo-icon .track-line::after {
+                            content: '';
+                            position: absolute;
+                            left: -100%;
+                            width: 50%;
+                            height: 100%;
+                            background: white;
+                            border-radius: 2px;
+                            animation: trackMove 3s ease-in-out infinite;
+                        }
+
+                        @keyframes trackMove {
+                            0% { left: -100%; }
+                            100% { left: 200%; }
+                        }
+
+                        .logo-option1 .logo-text {
+                            display: flex;
+                            flex-direction: column;
+                        }
+
+                        .logo-option1 .logo-text .main-text {
+                            font-size: 28px;
+                            font-weight: 800;
+                            color: #1A1A1A;
+                            line-height: 1;
+                            letter-spacing: -0.5px;
+                        }
+
+                        .logo-option1 .logo-text .main-text .red {
+                            color: #D32F2F;
+                        }
+
+                        .logo-option1 .logo-text .sub-text {
+                            font-size: 10px;
+                            font-weight: 600;
+                            color: #666;
+                            letter-spacing: 2.5px;
+                            text-transform: uppercase;
+                            margin-top: 2px;
+                        }
+                        </style>
+                        </head>
+                        <body>
+                        <a href="#" class="logo-option1">
+                            <div class="logo-icon">
+                                <span class="letter">IT</span>
+                                <div class="track-line"></div>
+                            </div>
+                            <div class="logo-text">
+                                <span class="main-text">Intern<span class="red">Track</span></span>
+                                <span class="sub-text">Management System</span>
+                            </div>
+                        </a>
+                        </body>
+                        </html>
+                    </a>
                 </div>
             </div>
             
             <div class="auth-body">
-                <?php if ($message): ?>
-                    <div class="alert alert-<?php echo $message_type; ?>"><?php echo $message; ?></div>
-                <?php endif; ?>
+                <h2><?php echo t('forgot_password_title'); ?></h2>
+                <p class="auth-subtitle"><?php echo t('forgot_password_contact_admin_subtitle'); ?></p>
                 
-                <?php if ($token_error): ?>
-                    <div class="alert alert-danger"><?php echo $token_error; ?></div>
-                <?php endif; ?>
-                
-                <?php if ($success && $step === 'request'): ?>
-                    <!-- Success message after sending reset link -->
-                    <div class="success-page">
-                        <div class="success-icon">📧</div>
-                        <h3><?php echo t('check_your_email'); ?></h3>
-                        <p><?php echo t('reset_link_sent_message'); ?></p>
-                        <p style="color: var(--gray-400); font-size: 14px; margin-top: 8px;">
-                            <?php echo t('check_spam_folder'); ?>
-                        </p>
-                        <div style="margin-top: 24px;">
-                            <a href="/interntrack/auth/login.php" class="btn btn-primary"><?php echo t('back_to_login'); ?></a>
-                        </div>
+                <!-- Info Box -->
+                <div class="info-box">
+                    <span class="info-icon">ℹ️</span>
+                    <div class="info-text">
+                        <?php echo t('forgot_password_info_message'); ?>
                     </div>
-                <?php elseif ($success && $step === 'reset'): ?>
-                    <!-- Success message after password reset -->
-                    <div class="success-page">
-                        <div class="success-icon">✅</div>
-                        <h3><?php echo t('password_reset_success_title'); ?></h3>
-                        <p><?php echo t('password_reset_success_message'); ?></p>
-                        <div style="margin-top: 24px;">
-                            <a href="/interntrack/auth/login.php" class="btn btn-primary"><?php echo t('login_now'); ?></a>
-                        </div>
+                </div>
+
+                <!-- Contact Details -->
+                <div class="contact-details">
+                    <div class="contact-item">
+                        <span class="contact-icon">📧</span>
+                        <span class="contact-text">
+                            <strong><?php echo t('email'); ?>:</strong> 
+                            <a href="mailto:<?php echo ADMIN_EMAIL; ?>"><?php echo ADMIN_EMAIL; ?></a>
+                        </span>
                     </div>
-                <?php elseif ($step === 'reset' && $token_valid): ?>
-                    <!-- Reset Password Form -->
-                    <h2><?php echo t('reset_password'); ?></h2>
-                    <p class="auth-subtitle"><?php echo t('reset_password_subtitle'); ?></p>
-                    
-                    <form method="POST" action="" class="auth-form">
-                        <input type="hidden" name="action" value="reset_password">
-                        <input type="hidden" name="token" value="<?php echo htmlspecialchars($_GET['token'] ?? ''); ?>">
-                        
-                        <div class="form-group password-toggle">
-                            <label for="password"><?php echo t('new_password'); ?></label>
-                            <input type="password" id="password" name="password" class="form-control" required minlength="8" 
-                                   placeholder="<?php echo t('enter_new_password'); ?>" onkeyup="validatePassword(this.value)">
-                            <button type="button" class="toggle-btn" onclick="togglePassword('password')" aria-label="Toggle password visibility">
-                                👁️
-                            </button>
-                            <div class="password-requirements" id="passwordRequirements">
-                                <div id="reqLength" class="invalid">❌ <?php echo t('min_8_characters'); ?></div>
-                                <div id="reqUppercase" class="invalid">❌ <?php echo t('at_least_one_uppercase'); ?></div>
-                                <div id="reqLowercase" class="invalid">❌ <?php echo t('at_least_one_lowercase'); ?></div>
-                                <div id="reqNumber" class="invalid">❌ <?php echo t('at_least_one_number'); ?></div>
-                            </div>
-                        </div>
-                        
-                        <div class="form-group password-toggle">
-                            <label for="confirm_password"><?php echo t('confirm_new_password'); ?></label>
-                            <input type="password" id="confirm_password" name="confirm_password" class="form-control" required 
-                                   placeholder="<?php echo t('confirm_password_placeholder'); ?>">
-                            <button type="button" class="toggle-btn" onclick="togglePassword('confirm_password')" aria-label="Toggle password visibility">
-                                👁️
-                            </button>
-                        </div>
-                        
-                        <button type="submit" class="btn btn-primary btn-block"><?php echo t('reset_password'); ?></button>
-                    </form>
-                    
-                    <div style="text-align: center; margin-top: 16px;">
-                        <a href="/interntrack/auth/login.php" class="btn btn-secondary" style="width: 100%;"><?php echo t('back_to_login'); ?></a>
+                    <div class="contact-item">
+                        <span class="contact-icon">📞</span>
+                        <span class="contact-text">
+                            <strong><?php echo t('phone'); ?>:</strong> 
+                            <span>+237 123 456 789</span>
+                        </span>
                     </div>
-                    
-                <?php elseif ($step === 'reset'): ?>
-                    <!-- Invalid or expired token -->
-                    <div class="success-page">
-                        <div class="success-icon">🔒</div>
-                        <h3><?php echo t('invalid_reset_link'); ?></h3>
-                        <p><?php echo t('invalid_reset_link_message'); ?></p>
-                        <div style="margin-top: 24px;">
-                            <a href="/interntrack/auth/forgot_password.php" class="btn btn-primary"><?php echo t('request_new_reset_link'); ?></a>
-                        </div>
-                        <div style="margin-top: 12px;">
-                            <a href="/interntrack/auth/login.php" class="btn btn-secondary"><?php echo t('back_to_login'); ?></a>
-                        </div>
+                    <div class="contact-item">
+                        <span class="contact-icon">🕐</span>
+                        <span class="contact-text">
+                            <strong><?php echo t('working_hours'); ?>:</strong> 
+                            <span><?php echo t('working_hours_value'); ?></span>
+                        </span>
                     </div>
-                    
-                <?php else: ?>
-                    <!-- Request Reset Form -->
-                    <h2><?php echo t('forgot_password_title'); ?></h2>
-                    <p class="auth-subtitle"><?php echo t('forgot_password_subtitle'); ?></p>
-                    
-                    <form method="POST" action="" class="auth-form">
-                        <input type="hidden" name="action" value="send_reset_link">
-                        <div class="form-group">
-                            <label for="email"><?php echo t('email'); ?></label>
-                            <input type="email" id="email" name="email" class="form-control" required 
-                                   placeholder="<?php echo t('enter_your_email'); ?>" 
-                                   value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>">
-                        </div>
-                        <button type="submit" class="btn btn-primary btn-block"><?php echo t('send_reset_link'); ?></button>
-                    </form>
-                    
-                    <div style="text-align: center; margin-top: 16px;">
-                        <a href="/interntrack/auth/login.php"><?php echo t('back_to_login'); ?></a>
-                    </div>
-                <?php endif; ?>
+                </div>
+
+                <!-- Action Buttons -->
+                <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 16px;">
+                    <a href="mailto:<?php echo ADMIN_EMAIL; ?>?subject=<?php echo urlencode(t('password_reset_request_subject')); ?>&body=<?php echo urlencode(t('password_reset_request_body')); ?>" 
+                       class="btn btn-primary btn-block">
+                        📧 <?php echo t('send_email_to_admin'); ?>
+                    </a>
+                    <a href="/interntrack/auth/login.php" class="btn btn-secondary btn-block">
+                        ↩️ <?php echo t('back_to_login'); ?>
+                    </a>
+                </div>
+
+                <!-- Additional Info -->
+                <div style="margin-top: 16px; padding: 12px; background: var(--gray-50); border-radius: 8px;">
+                    <p style="font-size: 13px; color: var(--gray-500); text-align: center; margin: 0;">
+                        <?php echo t('forgot_password_additional_info'); ?>
+                    </p>
+                </div>
             </div>
             
             <div class="auth-footer">
-                <p><?php echo t('remember_password'); ?> <a href="/interntrack/auth/login.php"><?php echo t('login'); ?></a></p>
-                <p style="margin-top: 4px;"><?php echo t('dont_have_account'); ?> <a href="/interntrack/auth/register.php"><?php echo t('register'); ?></a></p>
+                <p><?php echo t('remember_password'); ?> <a href="/interntrack/auth/login.php" style="color: var(--primary-red);"><?php echo t('login'); ?></a></p>
+                <p><?php echo t('dont_have_account'); ?> <a href="/interntrack/auth/register.php" style="color: var(--primary-red);"><?php echo t('register'); ?></a></p>
             </div>
             
             <div class="language-switcher">
-                <button class="<?php echo ($_SESSION['language'] ?? 'en') === 'en' ? 'active' : ''; ?>" data-lang="en">🇬🇧 EN</button>
-                <button class="<?php echo ($_SESSION['language'] ?? 'en') === 'fr' ? 'active' : ''; ?>" data-lang="fr">🇫🇷 FR</button>
+                <button class="<?php echo ($_SESSION['language'] ?? 'en') === 'en' ? 'active' : ''; ?>" data-lang="en">EN</button>
+                <button class="<?php echo ($_SESSION['language'] ?? 'en') === 'fr' ? 'active' : ''; ?>" data-lang="fr">FR</button>
             </div>
         </div>
     </div>
 
     <script>
-    function togglePassword(fieldId) {
-        const field = document.getElementById(fieldId);
-        const type = field.getAttribute('type') === 'password' ? 'text' : 'password';
-        field.setAttribute('type', type);
-        const btn = field.parentElement.querySelector('.toggle-btn');
-        btn.textContent = type === 'password' ? '👁️' : '👁️‍🗨️';
-    }
-
-    function validatePassword(password) {
-        const requirements = {
-            length: password.length >= 8,
-            uppercase: /[A-Z]/.test(password),
-            lowercase: /[a-z]/.test(password),
-            number: /[0-9]/.test(password)
-        };
-        
-        document.getElementById('reqLength').className = requirements.length ? 'valid' : 'invalid';
-        document.getElementById('reqLength').textContent = (requirements.length ? '✅' : '❌') + ' <?php echo t('min_8_characters'); ?>';
-        
-        document.getElementById('reqUppercase').className = requirements.uppercase ? 'valid' : 'invalid';
-        document.getElementById('reqUppercase').textContent = (requirements.uppercase ? '✅' : '❌') + ' <?php echo t('at_least_one_uppercase'); ?>';
-        
-        document.getElementById('reqLowercase').className = requirements.lowercase ? 'valid' : 'invalid';
-        document.getElementById('reqLowercase').textContent = (requirements.lowercase ? '✅' : '❌') + ' <?php echo t('at_least_one_lowercase'); ?>';
-        
-        document.getElementById('reqNumber').className = requirements.number ? 'valid' : 'invalid';
-        document.getElementById('reqNumber').textContent = (requirements.number ? '✅' : '❌') + ' <?php echo t('at_least_one_number'); ?>';
-    }
-
-    // Password confirmation validation
-    document.getElementById('confirm_password')?.addEventListener('input', function() {
-        const password = document.getElementById('password');
-        if (this.value !== password.value) {
-            this.setCustomValidity('<?php echo t('password_mismatch'); ?>');
-        } else {
-            this.setCustomValidity('');
-        }
-    });
-
-    // Form validation
-    document.getElementById('resetForm')?.addEventListener('submit', function(e) {
-        const password = document.getElementById('password');
-        const confirmPassword = document.getElementById('confirm_password');
-        
-        if (password.value.length < 8) {
-            e.preventDefault();
-            alert('<?php echo t('password_too_short'); ?>');
-            return false;
-        }
-        
-        if (password.value !== confirmPassword.value) {
-            e.preventDefault();
-            alert('<?php echo t('password_mismatch'); ?>');
-            return false;
-        }
-    });
-
     // Language switcher
     document.querySelectorAll('.language-switcher button').forEach(btn => {
         btn.addEventListener('click', function() {

@@ -110,27 +110,27 @@ include_once '../includes/header.php';
 
     <!-- Stats Grid -->
     <div class="stats-grid">
-        <div class="stat-card" onclick="window.location.href='/interntrack/supervisor/interns.php'">
+        <div class="stat-card" style="cursor: pointer;" onclick="window.location.href='/interntrack/supervisor/interns.php'">
             <div class="stat-icon">👥</div>
             <div class="stat-value"><?php echo count($interns); ?></div>
             <div class="stat-label"><?php echo t('assigned_interns'); ?></div>
         </div>
-        <div class="stat-card" style="border-left-color: #16a34a;">
+        <div class="stat-card" style="border-left-color: #16a34a;" onclick="window.location.href='/interntrack/supervisor/timelogs.php'">
             <div class="stat-icon">✅</div>
             <div class="stat-value"><?php echo $active_count; ?></div>
             <div class="stat-label"><?php echo t('active_today'); ?></div>
         </div>
-        <div class="stat-card" style="border-left-color: #f59e0b;" onclick="window.location.href='/interntrack/supervisor/leave.php'">
+        <div class="stat-card" style="border-left-color: #f59e0b; cursor: pointer;" onclick="window.location.href='/interntrack/supervisor/leave.php'">
             <div class="stat-icon">📝</div>
             <div class="stat-value"><?php echo count($pending_leave); ?></div>
             <div class="stat-label"><?php echo t('pending_leave'); ?></div>
         </div>
-        <div class="stat-card" style="border-left-color: #3b82f6;" onclick="window.location.href='/interntrack/supervisor/chat.php'">
+        <div class="stat-card" style="border-left-color: #3b82f6; cursor: pointer;" onclick="window.location.href='/interntrack/supervisor/chat.php'">
             <div class="stat-icon">💬</div>
             <div class="stat-value"><?php echo $unread_messages; ?></div>
             <div class="stat-label"><?php echo t('unread_messages'); ?></div>
         </div>
-        <div class="stat-card" style="border-left-color: #8b5cf6;" onclick="window.location.href='/interntrack/supervisor/goals.php'">
+        <div class="stat-card" style="border-left-color: #8b5cf6; cursor: pointer;" onclick="window.location.href='/interntrack/supervisor/goals.php'">
             <div class="stat-icon">🎯</div>
             <div class="stat-value"><?php echo $active_goals; ?></div>
             <div class="stat-label"><?php echo t('active_goals'); ?></div>

@@ -1,6 +1,15 @@
 <?php
+// index.php
 require_once 'config/config.php';
 require_once 'config/language.php';
+
+global $conn;
+
+// Make sure language is set in session
+if (!isset($_SESSION['language'])) {
+    $_SESSION['language'] = 'en';
+}
+
 
 // // If user is logged in, redirect to appropriate dashboard
 // if (isLoggedIn()) {
@@ -464,12 +473,7 @@ $recent_activities = $stmt->fetchAll();
 
     <script>
         // Language switcher
-        document.querySelectorAll('.language-switcher button').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const lang = this.dataset.lang;
-                document.querySelectorAll('.language-switcher button').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                
+            function switchLanguage(lang) {
                 fetch('/interntrack/api/settings.php', {
                     method: 'POST',
                     headers: {
@@ -484,8 +488,7 @@ $recent_activities = $stmt->fetchAll();
                         location.reload();
                     }
                 });
-            });
-        });
+            }
 
         // Theme toggle
         document.querySelector('.theme-toggle')?.addEventListener('click', function() {

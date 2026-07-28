@@ -133,9 +133,9 @@ $role = $_SESSION['user_role'] ?? '';
             </a>
         </div>
         <div class="header-actions">
-            <div class="language-switcher">
-                <button class="<?php echo ($_SESSION['language'] ?? 'en') === 'en' ? 'active' : ''; ?>" onclick="switchLanguage('en')">EN</button>
-                <button class="<?php echo ($_SESSION['language'] ?? 'en') === 'fr' ? 'active' : ''; ?>" onclick="switchLanguage('fr')">FR</button>
+            <div class="language-switcher" style="justify-content: center; margin-top: 20px;">
+                <button class="<?php echo ($_SESSION['language'] ?? 'en') === 'en' ? 'active' : ''; ?>" data-lang="en">EN</button>
+                <button class="<?php echo ($_SESSION['language'] ?? 'en') === 'fr' ? 'active' : ''; ?>" data-lang="fr">FR</button>
             </div>
             
             <button class="theme-toggle" title="<?php echo t('theme'); ?>" onclick="toggleTheme()">
@@ -235,7 +235,8 @@ $role = $_SESSION['user_role'] ?? '';
     <?php include_once 'sidebar.php'; ?>
     
     <script>
-    function switchLanguage(lang) {
+        function switchLanguage(lang) {
+        // Set the language in session via API
         fetch('/interntrack/api/settings.php', {
             method: 'POST',
             headers: {
@@ -247,76 +248,84 @@ $role = $_SESSION['user_role'] ?? '';
         .then(response => response.json())
         .then(data => {
             if (data.success) {
+                // Reload the page to apply translations
                 location.reload();
+            } else {
+                console.error('Language switch failed:', data.message);
+                alert('Failed to switch language. Please try again.');
             }
-        });
-    }
-    
-    function toggleTheme() {
-        const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
-        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-        
-        fetch('/interntrack/api/settings.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: JSON.stringify({ action: 'theme', theme: newTheme })
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                document.documentElement.setAttribute('data-theme', newTheme);
-                const darkModeCss = document.querySelector('link[href*="dark-mode.css"]');
-                if (darkModeCss) {
-                    darkModeCss.disabled = newTheme !== 'dark';
-                }
-                document.querySelector('.theme-toggle').textContent = newTheme === 'light' ? '🌙' : '☀️';
-                document.body.classList.toggle('dark-mode', newTheme === 'dark');
-            }
+        .catch(error => {
+            console.error('Error switching language:', error);
+            alert('Error switching language. Please try again.');
         });
     }
-    
-    function toggleNotifications() {
-        const dropdown = document.getElementById('notificationDropdown');
-        dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
-        if (dropdown.style.display === 'block') {
-            fetch('/interntrack/api/notifications.php', {
+        
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            
+            fetch('/interntrack/api/settings.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest'
                 },
-                body: JSON.stringify({ action: 'mark_read' })
+                body: JSON.stringify({ action: 'theme', theme: newTheme })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.documentElement.setAttribute('data-theme', newTheme);
+                    const darkModeCss = document.querySelector('link[href*="dark-mode.css"]');
+                    if (darkModeCss) {
+                        darkModeCss.disabled = newTheme !== 'dark';
+                    }
+                    document.querySelector('.theme-toggle').textContent = newTheme === 'light' ? '🌙' : '☀️';
+                    document.body.classList.toggle('dark-mode', newTheme === 'dark');
+                }
             });
         }
-    }
-    
-    function toggleUserMenu() {
-        const dropdown = document.getElementById('userDropdown');
-        dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
-    }
-    
-    // Close dropdowns when clicking outside
-    document.addEventListener('click', function(e) {
-        if (!e.target.closest('.notification-btn')) {
-            document.getElementById('notificationDropdown').style.display = 'none';
-        }
-        if (!e.target.closest('.user-menu')) {
-            document.getElementById('userDropdown').style.display = 'none';
-        }
-    });
-    
-    // Initialize dark mode
-    document.addEventListener('DOMContentLoaded', function() {
-        const theme = document.documentElement.getAttribute('data-theme') || 'light';
-        if (theme === 'dark') {
-            document.body.classList.add('dark-mode');
-            const darkModeCss = document.querySelector('link[href*="dark-mode.css"]');
-            if (darkModeCss) {
-                darkModeCss.disabled = false;
+        
+        function toggleNotifications() {
+            const dropdown = document.getElementById('notificationDropdown');
+            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+            if (dropdown.style.display === 'block') {
+                fetch('/interntrack/api/notifications.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({ action: 'mark_read' })
+                });
             }
         }
-    });
+        
+        function toggleUserMenu() {
+            const dropdown = document.getElementById('userDropdown');
+            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+        }
+        
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.notification-btn')) {
+                document.getElementById('notificationDropdown').style.display = 'none';
+            }
+            if (!e.target.closest('.user-menu')) {
+                document.getElementById('userDropdown').style.display = 'none';
+            }
+        });
+        
+        // Initialize dark mode
+        document.addEventListener('DOMContentLoaded', function() {
+            const theme = document.documentElement.getAttribute('data-theme') || 'light';
+            if (theme === 'dark') {
+                document.body.classList.add('dark-mode');
+                const darkModeCss = document.querySelector('link[href*="dark-mode.css"]');
+                if (darkModeCss) {
+                    darkModeCss.disabled = false;
+                }
+            }
+        });
     </script>

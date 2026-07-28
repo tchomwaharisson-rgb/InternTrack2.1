@@ -72,27 +72,27 @@ include_once '../includes/header.php';
 
     <!-- Stats Grid -->
     <div class="stats-grid">
-        <div class="stat-card" onclick="window.location.href='/interntrack/admin/users.php'">
+        <div class="stat-card" style="cursor: pointer;" onclick="window.location.href='/interntrack/admin/users.php'">
             <div class="stat-icon">👨‍🎓</div>
             <div class="stat-value"><?php echo $stats['total_interns']; ?></div>
             <div class="stat-label"><?php echo t('total_interns'); ?></div>
         </div>
-        <div class="stat-card" onclick="window.location.href='/interntrack/admin/users.php'">
+        <div class="stat-card" style="cursor: pointer;" onclick="window.location.href='/interntrack/admin/users.php'">
             <div class="stat-icon">👔</div>
             <div class="stat-value"><?php echo $stats['total_supervisors']; ?></div>
             <div class="stat-label"><?php echo t('total_supervisors'); ?></div>
         </div>
-        <div class="stat-card" onclick="window.location.href='/interntrack/admin/users.php'">
+        <div class="stat-card" style="cursor: pointer;" onclick="window.location.href='/interntrack/admin/users.php'">
             <div class="stat-icon">✅</div>
             <div class="stat-value"><?php echo $stats['active_users']; ?></div>
             <div class="stat-label"><?php echo t('active_users'); ?></div>
         </div>
-        <div class="stat-card" style="border-left-color: #f59e0b;" onclick="window.location.href='/interntrack/admin/requests.php'">
+        <div class="stat-card" style="border-left-color: #f59e0b; cursor: pointer;" onclick="window.location.href='/interntrack/admin/requests.php'">
             <div class="stat-icon">📝</div>
             <div class="stat-value"><?php echo $stats['pending_requests']; ?></div>
             <div class="stat-label"><?php echo t('pending_requests'); ?></div>
         </div>
-        <div class="stat-card" style="border-left-color: #16a34a;" onclick="window.location.href='/interntrack/admin/timelogs.php'">
+        <div class="stat-card" style="border-left-color: #16a34a; cursor: pointer;" onclick="window.location.href='/interntrack/admin/timelogs.php'">
             <div class="stat-icon">⏱️</div>
             <div class="stat-value"><?php echo $stats['clocked_in_today']; ?></div>
             <div class="stat-label"><?php echo t('clocked_in_today'); ?></div>

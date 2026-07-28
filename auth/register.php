@@ -1,6 +1,12 @@
 <?php
+// auth/register.php
 require_once '../config/config.php';
 require_once '../config/language.php';
+
+// Make sure language is set
+if (!isset($_SESSION['language'])) {
+    $_SESSION['language'] = 'en';
+}
 
 global $conn;
 
@@ -242,7 +248,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </a>
             </div>
             
-            <h1 class="auth-subtitle"><?php echo t('create account'); ?></h1>
+            <h1 class="auth-subtitle"><?php echo t('create_account'); ?></h1>
             
             <?php if ($error): ?>
                 <div class="toast toast-error"><?php echo $error; ?></div>
@@ -310,7 +316,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <span class="optional">(<?php echo t('optional'); ?>)</span>
                     </label>
                     <input type="text" id="theme" name="theme" class="form-control" 
-                           placeholder="<?php echo t('enter internship theme'); ?>" 
+                           placeholder="<?php echo t('enter_internship_theme'); ?>" 
                            value="<?php echo htmlspecialchars($_POST['theme'] ?? ''); ?>">
                     <small style="color: var(--gray-500); font-size: 12px; display: block; margin-top: 4px;">
                         <?php echo t('theme_help_text'); ?>
@@ -347,13 +353,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
             
             <div class="auth-footer">
-                <p><?php echo t('alread have account'); ?> <a href="/interntrack/auth/login.php"><?php echo t('login'); ?></a></p>
-                <p><?php ?> <a href="/interntrack"><?php echo t('Back to Home'); ?></a></p>
+                <p><?php echo t('already_have_account'); ?> <a href="/interntrack/auth/login.php"><?php echo t('login'); ?></a></p>
+                <p><?php echo t('back_to_home'); ?> <a href="/interntrack"><?php echo t('back_to_home'); ?></a></p>
             </div>
             
             <div class="language-switcher" style="justify-content: center; margin-top: 20px;">
-                <button class="<?php echo ($_SESSION['language'] ?? 'en') === 'en' ? 'active' : ''; ?>" data-lang="en">🇬🇧 EN</button>
-                <button class="<?php echo ($_SESSION['language'] ?? 'en') === 'fr' ? 'active' : ''; ?>" data-lang="fr">🇫🇷 FR</button>
+                <button class="<?php echo ($_SESSION['language'] ?? 'en') === 'en' ? 'active' : ''; ?>" data-lang="en">EN</button>
+                <button class="<?php echo ($_SESSION['language'] ?? 'en') === 'fr' ? 'active' : ''; ?>" data-lang="fr">FR</button>
             </div>
         </div>
     </div>

@@ -240,7 +240,7 @@ $avatar_url = $profile_picture ? '/interntrack/uploads/profiles/' . $profile_pic
 /* Sidebar Styles */
 .sidebar {
     position: fixed;
-    top: 0;
+    top: 5;
     left: 0;
     bottom: 0;
     width: 260px;

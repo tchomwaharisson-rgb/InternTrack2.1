@@ -3,6 +3,11 @@
 require_once '../config/config.php';
 require_once '../config/language.php';
 
+// Make sure language is set
+if (!isset($_SESSION['language'])) {
+    $_SESSION['language'] = 'en';
+}
+
 global $conn;
 
 if (isLoggedIn()) {
@@ -243,13 +248,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             <div class="auth-footer">
                 <p><?php echo t('dont_have_account'); ?> <a href="/interntrack/auth/register.php"><?php echo t('register'); ?></a></p>
-                <p><?php ?> <a href="/interntrack"><?php echo t('Back to Home'); ?></a></p>
+                <p><?php echo t('back_to_home'); ?> <a href="/interntrack"><?php echo t('back_to_home'); ?></a></p>
                 <p style="margin-top: 8px;"><a href="/interntrack/auth/forgot_password.php"><?php echo t('forgot_password'); ?></a></p>
             </div>
             
-            <div class="language-switcher" style="justify-content: center; margin-top: 16px;">
-                <button class="<?php echo ($_SESSION['language'] ?? 'en') === 'en' ? 'active' : ''; ?>" onclick="switchLanguage('en')">EN</button>
-                <button class="<?php echo ($_SESSION['language'] ?? 'en') === 'fr' ? 'active' : ''; ?>" onclick="switchLanguage('fr')">FR</button>
+            <div class="language-switcher" style="justify-content: center; margin-top: 20px;">
+                <button class="<?php echo ($_SESSION['language'] ?? 'en') === 'en' ? 'active' : ''; ?>" data-lang="en">EN</button>
+                <button class="<?php echo ($_SESSION['language'] ?? 'en') === 'fr' ? 'active' : ''; ?>" data-lang="fr">FR</button>
             </div>
         </div>
     </div>

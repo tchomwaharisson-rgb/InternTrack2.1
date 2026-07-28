@@ -1,24 +1,19 @@
 <?php
 // config/config.php
 
+global $conn;
+
+// ============ SESSION INITIALIZATION ============
+// Set default language if not set, using the persisted cookie when available
+if (!isset($_SESSION['language']) || !in_array($_SESSION['language'], ['en', 'fr'], true)) {
+    $_SESSION['language'] = $_COOKIE['language'] ?? 'en';
+}
+
 // ============ TIME ZONE SETTINGS ============
-// Set timezone to Cameroon (West Africa Time - UTC+1)
 date_default_timezone_set('Africa/Douala');
-
-// ============ ERROR REPORTING ============
-// For development
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
-// For production (comment out the above and uncomment below)
-// error_reporting(E_ALL);
-// ini_set('display_errors', 0);
-// ini_set('log_errors', 1);
-// ini_set('error_log', __DIR__ . '/../logs/error.log');
 
 // ============ SESSION CONFIGURATION ============
 // Configure session settings BEFORE starting the session
-// Set session timeout (30 minutes)
 ini_set('session.gc_maxlifetime', 1800);
 ini_set('session.cookie_lifetime', 1800);
 
@@ -27,22 +22,14 @@ session_set_cookie_params([
     'lifetime' => 1800,
     'path' => '/',
     'domain' => '',
-    'secure' => false, // Set to true for HTTPS
+    'secure' => false,
     'httponly' => true,
     'samesite' => 'Lax'
 ]);
 
 // ============ START SESSION ============
-// Now start the session after all settings are configured
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
-}
-
-// ============ SESSION REGENERATION ============
-// Regenerate session ID to prevent session fixation
-if (!isset($_SESSION['created'])) {
-    session_regenerate_id(true);
-    $_SESSION['created'] = time();
 }
 
 // ============ APPLICATION CONSTANTS ============
@@ -55,21 +42,10 @@ define('ADMIN_EMAIL', 'admin@interntrack.com');
 // Database
 require_once __DIR__ . '/database.php';
 
-// Language
+// Language - THIS MUST COME AFTER SESSION START
 require_once __DIR__ . '/language.php';
 
-// Email (optional - comment out if not using email)
-// require_once __DIR__ . '/email.php';
-
-// ============ DATABASE CONNECTION ============
-// Initialize database connection as global
-$db = new Database();
-$conn = $db->getConnection();
-
-// Make $conn available globally
-$GLOBALS['conn'] = $conn;
-
-// ============ SESSION INITIALIZATION ============
+// ============ LANGUAGE INITIALIZATION ============
 // Set default language if not set
 if (!isset($_SESSION['language'])) {
     $_SESSION['language'] = 'en';
@@ -79,6 +55,11 @@ if (!isset($_SESSION['language'])) {
 if (!isset($_SESSION['theme'])) {
     $_SESSION['theme'] = 'light';
 }
+
+// ============ DATABASE CONNECTION ============
+$db = new Database();
+$conn = $db->getConnection();
+$GLOBALS['conn'] = $conn;
 
 // ============ HELPER FUNCTIONS ============
 
