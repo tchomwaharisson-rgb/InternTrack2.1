@@ -252,10 +252,68 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <p style="margin-top: 8px;"><a href="/interntrack/auth/forgot_password.php"><?php echo t('forgot_password'); ?></a></p>
             </div>
             
-            <div class="language-switcher" style="justify-content: center; margin-top: 20px;">
-                <button class="<?php echo ($_SESSION['language'] ?? 'en') === 'en' ? 'active' : ''; ?>" data-lang="en">EN</button>
-                <button class="<?php echo ($_SESSION['language'] ?? 'en') === 'fr' ? 'active' : ''; ?>" data-lang="fr">FR</button>
-            </div>
+            <style>
+                .flag-svg {
+                    display: inline-block;
+                    width: 24px;
+                    height: 16px;
+                    vertical-align: middle;
+                    margin-right: 6px;
+                    border-radius: 2px;
+                    border: 1px solid rgba(0,0,0,0.1);
+                }
+
+                .language-switcher button {
+                    display: inline-flex;
+                    align-items: center;
+                    padding: 6px 12px;
+                    border: 1px solid var(--gray-300);
+                    border-radius: 6px;
+                    background: transparent;
+                    cursor: pointer;
+                    font-size: 13px;
+                    font-weight: 500;
+                    transition: all 0.3s ease;
+                    color: var(--gray-700);
+                    gap: 4px;
+                }
+
+                .language-switcher button.active {
+                    background: var(--primary-color);
+                    color: white;
+                    border-color: var(--primary-color);
+                }
+
+                .language-switcher button:hover:not(.active) {
+                    background: var(--gray-100);
+                }
+            </style>
+
+                <div class="language-switcher" style="justify-content: center; margin-top: 20px;">
+                    <button class="<?php echo ($_SESSION['language'] ?? 'en') === 'en' ? 'active' : ''; ?>" data-lang="en" onclick="switchLanguage('en')">
+                        <svg class="flag-svg" viewBox="0 0 60 30" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="60" height="30" fill="#FFFFFF"/>
+                            <rect width="30" height="30" fill="#012169"/>
+                            <line x1="0" y1="0" x2="60" y2="30" stroke="#FFFFFF" stroke-width="3"/>
+                            <line x1="60" y1="0" x2="0" y2="30" stroke="#FFFFFF" stroke-width="3"/>
+                            <line x1="0" y1="0" x2="60" y2="30" stroke="#C8102E" stroke-width="1.5"/>
+                            <line x1="60" y1="0" x2="0" y2="30" stroke="#C8102E" stroke-width="1.5"/>
+                            <rect x="0" y="14" width="60" height="2" fill="#FFFFFF"/>
+                            <rect x="29" y="0" width="2" height="30" fill="#FFFFFF"/>
+                            <rect x="0" y="15" width="60" height="1" fill="#C8102E"/>
+                            <rect x="30" y="0" width="1" height="30" fill="#C8102E"/>
+                        </svg>
+                        EN
+                    </button>
+                    <button class="<?php echo ($_SESSION['language'] ?? 'en') === 'fr' ? 'active' : ''; ?>" data-lang="fr" onclick="switchLanguage('fr')">
+                        <svg class="flag-svg" viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="20" height="40" fill="#0055A4"/>
+                            <rect x="20" width="20" height="40" fill="#FFFFFF"/>
+                            <rect x="40" width="20" height="40" fill="#EF4135"/>
+                        </svg>
+                        FR
+                    </button>
+                </div>
         </div>
     </div>
     
