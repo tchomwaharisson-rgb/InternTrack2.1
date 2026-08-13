@@ -649,6 +649,7 @@ $translations = [
     'avg_hours_per_intern' => 'Moyenne d\'heures par stagiaire',
     'generated_by' => 'Généré par',
     'no_timelogs_found' => 'Aucun journal de temps trouvé pour la période sélectionnée',
+    'internship_report' => 'Rapport de stage',
 
     // ============ NOTIFICATIONS ============
     'notifications' => 'Notifications',
