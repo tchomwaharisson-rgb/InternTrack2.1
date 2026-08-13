@@ -641,7 +641,12 @@ $translations = [
     'reset' => 'Réinitialiser',
     'break_start' => 'Début pause',
     'break_end' => 'Fin pause',
-    
+    'time_logs_report' => 'Rapport des journaux de temps',
+    'date_range' => 'Plage de dates',
+    'total_records' => 'Total d\'enregistrements',
+    'generated_on' => 'Généré le',
+    'total_records' => 'Total d\'enregistrements',
+
     // ============ NOTIFICATIONS ============
     'notifications' => 'Notifications',
     'no_notifications' => 'Aucune notification',

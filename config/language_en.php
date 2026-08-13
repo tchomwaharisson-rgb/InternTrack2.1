@@ -400,7 +400,12 @@ $translations = [
     'break_time_reminder' => 'Break time is over, please return to work',
     'must_clock_in_first' => 'You must clock in first',
     'break_only_allowed' => 'Break is only allowed between {start} and {end}',
-    
+    'time_logs_report' => 'Time Logs Report',
+    'date_range' => 'Date Range',
+    'total_records' => 'Total Records',
+    'generated_on' => 'Generated On',
+    'total_records' => 'Total Records',
+
     // ============ PROFILE ============
     'profile' => 'Profile',
     'profile_title' => 'My Profile',
