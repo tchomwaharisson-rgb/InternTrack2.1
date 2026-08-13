@@ -25,7 +25,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     switch ($action) {
         case 'approve':
-            // Get the request data
             $stmt = $conn->prepare("SELECT * FROM registration_requests WHERE id = ? AND status = 'pending'");
             $stmt->execute([$request_id]);
             $request = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -90,83 +89,70 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     
                     $message = 'Error creating user: ' . $e->getMessage();
                     $message_type = 'error';
-                    logAudit($_SESSION['user_id'], 'reject_registration', 
-                             'Rejected request ID: ' . $request_id . ' - Database error');
+                    logAudit($_SESSION['user_id'], 'reject_registration', 'Rejected request ID: ' . $request_id . ' - Database error');
                     break;
                 }
-                
+
                 $user_id = $conn->lastInsertId();
-                
-                // Create role-specific record
+
                 if ($request['role'] === 'intern') {
-                    try {
-                        $stmt = $conn->prepare("INSERT INTO interns (user_id, school, field_of_study, theme) VALUES (?, ?, ?, ?)");
-                        $stmt->execute([
-                            $user_id, 
-                            $request['school'] ?? null, 
-                            $request['field_of_study'] ?? null,
-                            $request['theme'] ?? null
-                        ]);
-                    } catch (PDOException $e) {
-                        if (strpos($e->getMessage(), 'theme') !== false) {
-                            $stmt = $conn->prepare("INSERT INTO interns (user_id, school, field_of_study) VALUES (?, ?, ?)");
-                            $stmt->execute([
-                                $user_id, 
-                                $request['school'] ?? null, 
-                                $request['field_of_study'] ?? null
-                            ]);
-                        } else {
-                            throw $e;
-                        }
-                    }
+                    $start_date = $request['start_date'] ?? date('Y-m-d');
+                    $end_date = $request['end_date'] ?? date('Y-m-d', strtotime('+3 months'));
+
+                    $stmt = $conn->prepare("INSERT INTO interns (user_id, school, field_of_study, theme, start_date, end_date) VALUES (?, ?, ?, ?, ?, ?)");
+                    $stmt->execute([
+                        $user_id,
+                        $request['school'] ?? null,
+                        $request['field_of_study'] ?? null,
+                        $request['theme'] ?? null,
+                        $start_date,
+                        $end_date
+                    ]);
                 } elseif ($request['role'] === 'supervisor') {
                     $stmt = $conn->prepare("INSERT INTO supervisors (user_id, department, position) VALUES (?, ?, ?)");
                     $stmt->execute([
-                        $user_id, 
-                        $request['department'] ?? null, 
+                        $user_id,
+                        $request['department'] ?? null,
                         $request['position'] ?? null
                     ]);
                 }
-                
-                // Update request status
-                $stmt = $conn->prepare("UPDATE registration_requests SET status = 'approved', 
-                                       reviewed_at = NOW(), reviewed_by = ?, admin_comment = ? WHERE id = ?");
+
+                $stmt = $conn->prepare("UPDATE registration_requests SET status = 'approved', reviewed_at = NOW(), reviewed_by = ?, admin_comment = ? WHERE id = ?");
                 $stmt->execute([$_SESSION['user_id'], $admin_comment, $request_id]);
-                
-                // Create notification for the user
+
                 $notification = "Your registration has been approved! Welcome to " . SITE_NAME . ". You can login with the password you provided during registration.";
                 createNotification($user_id, 'registration_approved', $notification);
-                
+
                 $message = t('request_approved') . ' - User can login with their registration password.';
                 $message_type = 'success';
-                logAudit($_SESSION['user_id'], 'approve_registration', 
-                         'Approved request ID: ' . $request_id . ' - Comment: ' . $admin_comment);
+                logAudit($_SESSION['user_id'], 'approve_registration', 'Approved request ID: ' . $request_id . ' - Comment: ' . $admin_comment);
             } else {
                 $message = 'Request not found or already processed.';
                 $message_type = 'error';
             }
             break;
-            
+
         case 'reject':
-            // Get the request data
             $stmt = $conn->prepare("SELECT * FROM registration_requests WHERE id = ? AND status = 'pending'");
             $stmt->execute([$request_id]);
             $request = $stmt->fetch(PDO::FETCH_ASSOC);
-            
+
             if ($request) {
-                // Update request status
-                $stmt = $conn->prepare("UPDATE registration_requests SET status = 'rejected', 
-                                       reviewed_at = NOW(), reviewed_by = ?, admin_comment = ? WHERE id = ?");
+                $stmt = $conn->prepare("UPDATE registration_requests SET status = 'rejected', reviewed_at = NOW(), reviewed_by = ?, admin_comment = ? WHERE id = ?");
                 $stmt->execute([$_SESSION['user_id'], $admin_comment, $request_id]);
-                
+
                 $message = t('request_rejected');
                 $message_type = 'success';
-                logAudit($_SESSION['user_id'], 'reject_registration', 
-                         'Rejected request ID: ' . $request_id . ' - Comment: ' . $admin_comment);
+                logAudit($_SESSION['user_id'], 'reject_registration', 'Rejected request ID: ' . $request_id . ' - Comment: ' . $admin_comment);
             } else {
                 $message = 'Request not found or already processed.';
                 $message_type = 'error';
             }
+            break;
+
+        default:
+            $message = 'Invalid request action.';
+            $message_type = 'error';
             break;
     }
 }

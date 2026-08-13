@@ -646,6 +646,9 @@ $translations = [
     'total_records' => 'Total d\'enregistrements',
     'generated_on' => 'Généré le',
     'total_records' => 'Total d\'enregistrements',
+    'avg_hours_per_intern' => 'Moyenne d\'heures par stagiaire',
+    'generated_by' => 'Généré par',
+    'no_timelogs_found' => 'Aucun journal de temps trouvé pour la période sélectionnée',
 
     // ============ NOTIFICATIONS ============
     'notifications' => 'Notifications',

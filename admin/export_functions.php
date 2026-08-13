@@ -210,14 +210,14 @@ function exportReportPDF($report_data, $start_date, $end_date, $total_hours, $av
         <meta charset="UTF-8">
         <title>Internship Report</title>
         <style>
-            body { font-family: Arial, sans-serif; margin: 20px; }
+            body { font-family: Arial, sans-serif; margin: 20px; font-size: 12px; }
             h1 { color: #D32F2F; text-align: center; border-bottom: 2px solid #D32F2F; padding-bottom: 10px; }
             .header-info { margin-bottom: 20px; }
             .header-info table { width: 100%; }
             .header-info td { padding: 5px; }
-            table { width: 100%; border-collapse: collapse; font-size: 11px; }
-            th { background: #D32F2F; color: white; padding: 8px 10px; text-align: left; }
-            td { padding: 6px 10px; border-bottom: 1px solid #ddd; }
+            table { width: 100%; border-collapse: collapse; font-size: 10px; }
+            th { background: #D32F2F; color: white; padding: 6px 8px; text-align: left; }
+            td { padding: 5px 8px; border-bottom: 1px solid #ddd; }
             tr:nth-child(even) { background: #f9f9f9; }
             .summary { margin-top: 20px; background: #f5f5f5; padding: 15px; border-radius: 5px; }
             .summary table { width: auto; margin: 0 auto; }
@@ -240,8 +240,14 @@ function exportReportPDF($report_data, $start_date, $end_date, $total_hours, $av
         <table>
             <thead>
                 <tr>
+                    <th>#</th>
                     <th>' . t('intern') . '</th>
+                    <th>' . t('email') . '</th>
                     <th>' . t('school') . '</th>
+                    <th>' . t('field_of_study') . '</th>
+                    <th>' . t('supervisor') . '</th>
+                    <th>' . t('start_date') . '</th>
+                    <th>' . t('end_date') . '</th>
                     <th>' . t('total_hours') . '</th>
                     <th>' . t('days_worked') . '</th>
                     <th>' . t('avg_hours_per_day') . '</th>
@@ -252,17 +258,25 @@ function exportReportPDF($report_data, $start_date, $end_date, $total_hours, $av
             </thead>
             <tbody>';
     
+    $counter = 1;
     foreach ($report_data as $data) {
         $html .= '<tr>
-            <td>' . htmlspecialchars($data['first_name'] . ' ' . $data['last_name']) . '</td>
+            <td>' . $counter . '</td>
+            <td><strong>' . htmlspecialchars($data['first_name'] . ' ' . $data['last_name']) . '</strong></td>
+            <td>' . htmlspecialchars($data['email'] ?? 'N/A') . '</td>
             <td>' . htmlspecialchars($data['school'] ?? 'N/A') . '</td>
+            <td>' . htmlspecialchars($data['field_of_study'] ?? 'N/A') . '</td>
+            <td>' . htmlspecialchars(($data['supervisor_first_name'] ?? '') . ' ' . ($data['supervisor_last_name'] ?? '')) . '</td>
+            <td>' . (isset($data['intern_start_date']) ? date('M d, Y', strtotime($data['intern_start_date'])) : 'N/A') . '</td>
+            <td>' . (isset($data['intern_end_date']) ? date('M d, Y', strtotime($data['intern_end_date'])) : 'N/A') . '</td>
             <td><strong>' . number_format($data['total_hours'], 2) . '</strong></td>
-            <td>' . $data['days_worked'] . '</td>
+            <td>' . ($data['days_worked'] ?? 0) . '</td>
             <td>' . number_format($data['avg_hours'] ?? 0, 1) . '</td>
-            <td>' . $data['completed_days'] . '</td>
-            <td>' . $data['missed_days'] . '</td>
-            <td>' . $data['active_days'] . '</td>
+            <td>' . ($data['completed_days'] ?? 0) . '</td>
+            <td>' . ($data['missed_days'] ?? 0) . '</td>
+            <td>' . ($data['active_days'] ?? 0) . '</td>
         </tr>';
+        $counter++;
     }
     
     $html .= '</tbody>
@@ -307,8 +321,14 @@ function exportReportExcel($report_data, $start_date, $end_date, $total_hours, $
     fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
     
     fputcsv($output, [
+        '#',
         t('intern'),
+        t('email'),
         t('school'),
+        t('field_of_study'),
+        t('supervisor'),
+        t('start_date'),
+        t('end_date'),
         t('total_hours'),
         t('days_worked'),
         t('avg_hours_per_day'),
@@ -317,17 +337,25 @@ function exportReportExcel($report_data, $start_date, $end_date, $total_hours, $
         t('active')
     ]);
     
+    $counter = 1;
     foreach ($report_data as $data) {
         fputcsv($output, [
+            $counter,
             $data['first_name'] . ' ' . $data['last_name'],
+            $data['email'] ?? 'N/A',
             $data['school'] ?? 'N/A',
+            $data['field_of_study'] ?? 'N/A',
+            ($data['supervisor_first_name'] ?? '') . ' ' . ($data['supervisor_last_name'] ?? ''),
+            isset($data['intern_start_date']) ? date('Y-m-d', strtotime($data['intern_start_date'])) : 'N/A',
+            isset($data['intern_end_date']) ? date('Y-m-d', strtotime($data['intern_end_date'])) : 'N/A',
             number_format($data['total_hours'], 2),
-            $data['days_worked'],
+            $data['days_worked'] ?? 0,
             number_format($data['avg_hours'] ?? 0, 1),
-            $data['completed_days'],
-            $data['missed_days'],
-            $data['active_days']
+            $data['completed_days'] ?? 0,
+            $data['missed_days'] ?? 0,
+            $data['active_days'] ?? 0
         ]);
+        $counter++;
     }
     
     fputcsv($output, []);
