@@ -19,6 +19,7 @@ $date_from = $_GET['date_from'] ?? date('Y-m-01');
 $date_to = $_GET['date_to'] ?? date('Y-m-d');
 $status = $_GET['status'] ?? '';
 $search = $_GET['search'] ?? '';
+$export_format = $_GET['export'] ?? '';
 
 // Get all interns for filter dropdown
 $stmt = $conn->prepare("SELECT id, first_name, last_name, email FROM users WHERE role = 'intern' ORDER BY first_name");
@@ -82,6 +83,19 @@ foreach ($timelogs as $log) {
 $today = date('Y-m-d');
 $week_start = date('Y-m-d', strtotime('monday this week'));
 $month_start = date('Y-m-01');
+
+// Export functionality
+if (!empty($export_format)) {
+    require_once __DIR__ . '/export_functions.php';
+
+    if ($export_format === 'pdf') {
+        exportTimelogsPDF($timelogs, $date_from, $date_to, $total_hours, $total_days, $total_interns_logged, $avg_hours);
+        exit;
+    } elseif ($export_format === 'excel') {
+        exportTimelogsExcel($timelogs, $date_from, $date_to, $total_hours, $total_days, $total_interns_logged, $avg_hours);
+        exit;
+    }
+}
 
 include_once '../includes/header.php';
 ?>
@@ -172,7 +186,7 @@ include_once '../includes/header.php';
                                value="<?php echo htmlspecialchars($search); ?>">
                         <button type="submit" class="btn btn-primary"><?php echo t('search'); ?></button>
                         <?php if ($search || $intern_id || $status): ?>
-                            <a href="/interntrack/admin/timelog.php" class="btn btn-secondary"><?php echo t('clear'); ?></a>
+                            <a href="/interntrack/admin/timelogs.php" class="btn btn-secondary"><?php echo t('clear'); ?></a>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -374,7 +388,7 @@ function setDateRange(range) {
 
 // Reset filters
 function resetFilters() {
-    window.location.href = '/interntrack/admin/timelog.php';
+    window.location.href = '/interntrack/admin/timelogs.php';
 }
 
 // View details
@@ -428,49 +442,24 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
     });
 });
 
-// Export CSV
+// Build an export URL from the current filters
+function buildExportUrl(format) {
+    const form = document.getElementById('filterForm');
+    const params = new URLSearchParams(new FormData(form));
+    params.set('export', format);
+    return '/interntrack/admin/timelogs.php?' + params.toString();
+}
+
+// Export CSV (server-generated, includes ALL filtered records + summary)
 function exportCSV() {
-    const table = document.getElementById('timelogTable');
-    if (!table) return;
-    
-    let csv = [];
-    // Headers
-    const headers = [];
-    table.querySelectorAll('thead th').forEach(th => {
-        headers.push(th.textContent.trim());
-    });
-    csv.push(headers.join(','));
-    
-    // Data
-    table.querySelectorAll('tbody tr').forEach(tr => {
-        const row = [];
-        tr.querySelectorAll('td').forEach(td => {
-            // Clean up the text (remove extra whitespace, line breaks)
-            let text = td.textContent.trim().replace(/\n/g, ' ').replace(/\s+/g, ' ');
-            // If it contains a comma, wrap in quotes
-            if (text.includes(',')) {
-                text = `"${text}"`;
-            }
-            row.push(text);
-        });
-        csv.push(row.join(','));
-    });
-    
-    // Download
-    const blob = new Blob([csv.join('\n')], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `timelogs_${document.getElementById('date_from').value}_to_${document.getElementById('date_to').value}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
-    
+    window.location.href = buildExportUrl('excel');
     showToast('<?php echo t('export_success'); ?>', 'success');
 }
 
-// Export PDF (simplified - prints the table)
+// Export PDF (server-generated report, not a page print)
 function exportPDF() {
-    window.print();
+    window.location.href = buildExportUrl('pdf');
+    showToast('<?php echo t('export_success'); ?>', 'success');
 }
 
 // Handle force clock out form submission

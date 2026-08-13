@@ -85,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .password-toggle .toggle-btn {
             position: absolute;
             right: 12px;
-            top: 50%;
+            top: 70%;
             transform: translateY(-50%);
             background: none;
             border: none;

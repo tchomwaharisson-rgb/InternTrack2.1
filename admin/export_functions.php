@@ -2,8 +2,8 @@
 // admin/export_functions.php
 // This file contains export functions for PDF and Excel
 
-// Include dompdf autoloader at the top of the file
-require_once __DIR__ . '/../includes/dompdf/autoload.inc.php';
+// Include Composer autoloader (installs dompdf/dompdf and its dependencies)
+require_once __DIR__ . '/../vendor/autoload.php';
 
 use Dompdf\Dompdf;
 use Dompdf\Options;

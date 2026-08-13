@@ -107,7 +107,7 @@ try {
             $break_end_time = getSetting('break_end') ?? '14:00:00';
             
             if ($now < $break_start_time || $now > $break_end_time) {
-                echo json_encode(['success' => false, 'message' => t('break_only_allowed_between') . ' ' . $break_start_time . ' ' . t('and') . ' ' . $break_end_time]);
+                echo json_encode(['success' => false, 'message' => t('break_only_allowed') . ' ' . $break_start_time . ' ' . t('and') . ' ' . $break_end_time]);
                 exit;
             }
             

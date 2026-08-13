@@ -171,7 +171,7 @@ $role = $_SESSION['user_role'] ?? '';
             </style>
 
                 <div class="language-switcher">
-                    <button class="<?php echo ($_SESSION['language'] ?? 'en') === 'en' ? 'active' : ''; ?>" onclick="switchLanguage('en')">
+                    <button class="<?php echo ($_SESSION['language'] ?? 'en') === 'en' ? 'active' : ''; ?>" data-lang="en" onclick="switchLanguage('en')">
                         <svg class="flag-svg" viewBox="0 0 60 30" xmlns="http://www.w3.org/2000/svg">
                             <rect width="60" height="30" fill="#FFFFFF"/>
                             <rect width="30" height="30" fill="#012169"/>
@@ -186,7 +186,7 @@ $role = $_SESSION['user_role'] ?? '';
                         </svg>
                         EN
                     </button>
-                    <button class="<?php echo ($_SESSION['language'] ?? 'en') === 'fr' ? 'active' : ''; ?>" onclick="switchLanguage('fr')">
+                    <button class="<?php echo ($_SESSION['language'] ?? 'en') === 'fr' ? 'active' : ''; ?>" data-lang="fr" onclick="switchLanguage('fr')">
                         <svg class="flag-svg" viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg">
                             <rect width="20" height="40" fill="#0055A4"/>
                             <rect x="20" width="20" height="40" fill="#FFFFFF"/>
