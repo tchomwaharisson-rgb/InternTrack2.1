@@ -4,9 +4,28 @@
 
 // Include Composer autoloader (installs dompdf/dompdf and its dependencies)
 require_once __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/../includes/psr_simple_cache_compat.php';
+
+spl_autoload_register(function ($class) {
+    $prefix = 'PhpOffice\\PhpSpreadsheet\\';
+    $baseDir = __DIR__ . '/../includes/PhpSpreadsheet/src/PhpSpreadsheet/';
+
+    if (strncmp($class, $prefix, strlen($prefix)) !== 0) {
+        return;
+    }
+
+    $relativeClass = substr($class, strlen($prefix));
+    $file = $baseDir . str_replace('\\', '/', $relativeClass) . '.php';
+
+    if (file_exists($file)) {
+        require $file;
+    }
+});
 
 use Dompdf\Dompdf;
 use Dompdf\Options;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xls;
 
 /**
  * Export timelogs to PDF
@@ -140,20 +159,80 @@ function exportTimelogsPDF($timelogs, $date_from, $date_to, $total_hours, $total
 }
 
 /**
- * Export timelogs to Excel (CSV)
+ * Export timelogs to real Excel .xls file
  */
 function exportTimelogsExcel($timelogs, $date_from, $date_to, $total_hours, $total_days, $total_interns, $avg_hours) {
-    // Set headers for Excel download (CSV)
+    $spreadsheet = new Spreadsheet();
+    $sheet = $spreadsheet->getActiveSheet();
+
+    $headers = [
+        t('intern'),
+        t('date'),
+        t('clock_in'),
+        t('clock_out'),
+        t('break_start'),
+        t('break_end'),
+        t('break_duration'),
+        t('total_hours'),
+        t('status')
+    ];
+    $sheet->fromArray($headers, null, 'A1');
+
+    $row = 2;
+    foreach ($timelogs as $log) {
+        $sheet->fromArray([
+            $log['first_name'] . ' ' . $log['last_name'],
+            date('Y-m-d', strtotime($log['date'])),
+            $log['clock_in'] ? date('H:i', strtotime($log['clock_in'])) : '-',
+            $log['clock_out'] ? date('H:i', strtotime($log['clock_out'])) : '-',
+            $log['break_start'] ? date('H:i', strtotime($log['break_start'])) : '-',
+            $log['break_end'] ? date('H:i', strtotime($log['break_end'])) : '-',
+            ($log['total_break_minutes'] ?? 0) . ' min',
+            number_format($log['total_hours'], 2),
+            ucfirst($log['status'])
+        ], null, 'A' . $row);
+        $row++;
+    }
+
+    $summaryStart = $row + 2;
+    $sheet->setCellValue('A' . $summaryStart, t('summary'));
+    $sheet->setCellValue('A' . ($summaryStart + 1), t('total_records'));
+    $sheet->setCellValue('B' . ($summaryStart + 1), count($timelogs));
+    $sheet->setCellValue('A' . ($summaryStart + 2), t('total_hours'));
+    $sheet->setCellValue('B' . ($summaryStart + 2), number_format($total_hours, 2) . ' hrs');
+    $sheet->setCellValue('A' . ($summaryStart + 3), t('total_days'));
+    $sheet->setCellValue('B' . ($summaryStart + 3), $total_days);
+    $sheet->setCellValue('A' . ($summaryStart + 4), t('interns_logged'));
+    $sheet->setCellValue('B' . ($summaryStart + 4), $total_interns);
+    $sheet->setCellValue('A' . ($summaryStart + 5), t('avg_hours_per_day'));
+    $sheet->setCellValue('B' . ($summaryStart + 5), number_format($avg_hours, 2) . ' hrs');
+    $sheet->setCellValue('A' . ($summaryStart + 6), t('date_range'));
+    $sheet->setCellValue('B' . ($summaryStart + 6), date('Y-m-d', strtotime($date_from)) . ' - ' . date('Y-m-d', strtotime($date_to)));
+    $sheet->setCellValue('A' . ($summaryStart + 7), t('generated_on'));
+    $sheet->setCellValue('B' . ($summaryStart + 7), date('Y-m-d H:i:s'));
+
+    foreach (range('A', 'I') as $column) {
+        $sheet->getColumnDimension($column)->setAutoSize(true);
+    }
+
+    header('Content-Type: application/vnd.ms-excel');
+    header('Content-Disposition: attachment; filename="timelogs_' . date('Y-m-d') . '.xls"');
+    header('Cache-Control: max-age=0');
+
+    $writer = new Xls($spreadsheet);
+    $writer->save('php://output');
+}
+
+/**
+ * Export timelogs to CSV
+ */
+function exportTimelogsCsv($timelogs, $date_from, $date_to, $total_hours, $total_days, $total_interns, $avg_hours) {
     header('Content-Type: text/csv; charset=utf-8');
     header('Content-Disposition: attachment; filename="timelogs_' . date('Y-m-d') . '.csv"');
-    
-    // Create output stream
+
     $output = fopen('php://output', 'w');
-    
-    // Add BOM for UTF-8
     fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
-    
-    // Add header row
+
     fputcsv($output, [
         t('intern'),
         t('date'),
@@ -164,9 +243,8 @@ function exportTimelogsExcel($timelogs, $date_from, $date_to, $total_hours, $tot
         t('break_duration'),
         t('total_hours'),
         t('status')
-    ]);
-    
-    // Add data rows
+    ], ';', '"', '\\');
+
     foreach ($timelogs as $log) {
         fputcsv($output, [
             $log['first_name'] . ' ' . $log['last_name'],
@@ -178,22 +256,19 @@ function exportTimelogsExcel($timelogs, $date_from, $date_to, $total_hours, $tot
             ($log['total_break_minutes'] ?? 0) . ' min',
             number_format($log['total_hours'], 2),
             ucfirst($log['status'])
-        ]);
+        ], ';', '"', '\\');
     }
-    
-    // Add empty row
-    fputcsv($output, []);
-    
-    // Add summary
-    fputcsv($output, [t('summary')]);
-    fputcsv($output, [t('total_records'), count($timelogs)]);
-    fputcsv($output, [t('total_hours'), number_format($total_hours, 2) . ' hrs']);
-    fputcsv($output, [t('total_days'), $total_days]);
-    fputcsv($output, [t('interns_logged'), $total_interns]);
-    fputcsv($output, [t('avg_hours_per_day'), number_format($avg_hours, 2) . ' hrs']);
-    fputcsv($output, [t('date_range'), date('Y-m-d', strtotime($date_from)) . ' - ' . date('Y-m-d', strtotime($date_to))]);
-    fputcsv($output, [t('generated_on'), date('Y-m-d H:i:s')]);
-    
+
+    fputcsv($output, [], ';', '"', '\\');
+    fputcsv($output, [t('summary')], ';', '"', '\\');
+    fputcsv($output, [t('total_records'), count($timelogs)], ';', '"', '\\');
+    fputcsv($output, [t('total_hours'), number_format($total_hours, 2) . ' hrs'], ';', '"', '\\');
+    fputcsv($output, [t('total_days'), $total_days], ';', '"', '\\');
+    fputcsv($output, [t('interns_logged'), $total_interns], ';', '"', '\\');
+    fputcsv($output, [t('avg_hours_per_day'), number_format($avg_hours, 2) . ' hrs'], ';', '"', '\\');
+    fputcsv($output, [t('date_range'), date('Y-m-d', strtotime($date_from)) . ' - ' . date('Y-m-d', strtotime($date_to))], ';', '"', '\\');
+    fputcsv($output, [t('generated_on'), date('Y-m-d H:i:s')], ';', '"', '\\');
+
     fclose($output);
 }
 
@@ -311,17 +386,17 @@ function exportReportPDF($report_data, $start_date, $end_date, $total_hours, $av
 }
 
 /**
- * Export report to Excel (CSV)
+ * Export report to CSV
  */
-function exportReportExcel($report_data, $start_date, $end_date, $total_hours, $avg_hours) {
+function exportReportCsv($report_data, $start_date, $end_date, $total_hours, $avg_hours) {
     header('Content-Type: text/csv; charset=utf-8');
     header('Content-Disposition: attachment; filename="report_' . date('Y-m-d') . '.csv"');
-    
+
     $output = fopen('php://output', 'w');
     fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
-    
+
     fputcsv($output, [
-        '#',
+        'ID',
         t('intern'),
         t('email'),
         t('school'),
@@ -335,8 +410,8 @@ function exportReportExcel($report_data, $start_date, $end_date, $total_hours, $
         t('completed'),
         t('missed'),
         t('active')
-    ]);
-    
+    ], ';', '"', '\\');
+
     $counter = 1;
     foreach ($report_data as $data) {
         fputcsv($output, [
@@ -354,18 +429,91 @@ function exportReportExcel($report_data, $start_date, $end_date, $total_hours, $
             $data['completed_days'] ?? 0,
             $data['missed_days'] ?? 0,
             $data['active_days'] ?? 0
-        ]);
+        ], ';', '"', '\\');
         $counter++;
     }
-    
-    fputcsv($output, []);
-    fputcsv($output, [t('summary')]);
-    fputcsv($output, [t('total_interns'), count($report_data)]);
-    fputcsv($output, [t('total_hours'), number_format($total_hours, 2) . ' hrs']);
-    fputcsv($output, [t('avg_hours_per_intern'), number_format($avg_hours, 1) . ' hrs']);
-    fputcsv($output, [t('date_range'), date('Y-m-d', strtotime($start_date)) . ' - ' . date('Y-m-d', strtotime($end_date))]);
-    fputcsv($output, [t('generated_on'), date('Y-m-d H:i:s')]);
-    
+
+    fputcsv($output, [], ';', '"', '\\');
+    fputcsv($output, [t('summary')], ';', '"', '\\');
+    fputcsv($output, [t('total_interns'), count($report_data)], ';', '"', '\\');
+    fputcsv($output, [t('total_hours'), number_format($total_hours, 2) . ' hrs'], ';', '"', '\\');
+    fputcsv($output, [t('avg_hours_per_intern'), number_format($avg_hours, 1) . ' hrs'], ';', '"', '\\');
+    fputcsv($output, [t('date_range'), date('Y-m-d', strtotime($start_date)) . ' - ' . date('Y-m-d', strtotime($end_date))], ';', '"', '\\');
+    fputcsv($output, [t('generated_on'), date('Y-m-d H:i:s')], ';', '"', '\\');
+
     fclose($output);
+}
+
+/**
+ * Export report to real Excel .xls file
+ */
+function exportReportExcel($report_data, $start_date, $end_date, $total_hours, $avg_hours) {
+    $spreadsheet = new Spreadsheet();
+    $sheet = $spreadsheet->getActiveSheet();
+
+    $headers = [
+        '#',
+        t('intern'),
+        t('email'),
+        t('school'),
+        t('field_of_study'),
+        t('supervisor'),
+        t('start_date'),
+        t('end_date'),
+        t('total_hours'),
+        t('days_worked'),
+        t('avg_hours_per_day'),
+        t('completed'),
+        t('missed'),
+        t('active')
+    ];
+    $sheet->fromArray($headers, null, 'A1');
+
+    $row = 2;
+    $counter = 1;
+    foreach ($report_data as $data) {
+        $sheet->fromArray([
+            $counter,
+            $data['first_name'] . ' ' . $data['last_name'],
+            $data['email'] ?? 'N/A',
+            $data['school'] ?? 'N/A',
+            $data['field_of_study'] ?? 'N/A',
+            ($data['supervisor_first_name'] ?? '') . ' ' . ($data['supervisor_last_name'] ?? ''),
+            isset($data['intern_start_date']) ? date('Y-m-d', strtotime($data['intern_start_date'])) : 'N/A',
+            isset($data['intern_end_date']) ? date('Y-m-d', strtotime($data['intern_end_date'])) : 'N/A',
+            number_format($data['total_hours'], 2),
+            $data['days_worked'] ?? 0,
+            number_format($data['avg_hours'] ?? 0, 1),
+            $data['completed_days'] ?? 0,
+            $data['missed_days'] ?? 0,
+            $data['active_days'] ?? 0
+        ], null, 'A' . $row);
+        $counter++;
+        $row++;
+    }
+
+    $summaryStart = $row + 2;
+    $sheet->setCellValue('A' . $summaryStart, t('summary'));
+    $sheet->setCellValue('A' . ($summaryStart + 1), t('total_interns'));
+    $sheet->setCellValue('B' . ($summaryStart + 1), count($report_data));
+    $sheet->setCellValue('A' . ($summaryStart + 2), t('total_hours'));
+    $sheet->setCellValue('B' . ($summaryStart + 2), number_format($total_hours, 2) . ' hrs');
+    $sheet->setCellValue('A' . ($summaryStart + 3), t('avg_hours_per_intern'));
+    $sheet->setCellValue('B' . ($summaryStart + 3), number_format($avg_hours, 1) . ' hrs');
+    $sheet->setCellValue('A' . ($summaryStart + 4), t('date_range'));
+    $sheet->setCellValue('B' . ($summaryStart + 4), date('Y-m-d', strtotime($start_date)) . ' - ' . date('Y-m-d', strtotime($end_date)));
+    $sheet->setCellValue('A' . ($summaryStart + 5), t('generated_on'));
+    $sheet->setCellValue('B' . ($summaryStart + 5), date('Y-m-d H:i:s'));
+
+    foreach (range('A', 'N') as $column) {
+        $sheet->getColumnDimension($column)->setAutoSize(true);
+    }
+
+    header('Content-Type: application/vnd.ms-excel');
+    header('Content-Disposition: attachment; filename="report_' . date('Y-m-d') . '.xls"');
+    header('Cache-Control: max-age=0');
+
+    $writer = new Xls($spreadsheet);
+    $writer->save('php://output');
 }
 ?>
