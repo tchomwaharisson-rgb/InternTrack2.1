@@ -91,6 +91,9 @@ if (!empty($export_format)) {
     if ($export_format === 'pdf') {
         exportTimelogsPDF($timelogs, $date_from, $date_to, $total_hours, $total_days, $total_interns_logged, $avg_hours);
         exit;
+    } elseif ($export_format === 'csv') {
+        exportTimelogsCsv($timelogs, $date_from, $date_to, $total_hours, $total_days, $total_interns_logged, $avg_hours);
+        exit;
     } elseif ($export_format === 'excel') {
         exportTimelogsExcel($timelogs, $date_from, $date_to, $total_hours, $total_days, $total_interns_logged, $avg_hours);
         exit;
@@ -452,7 +455,7 @@ function buildExportUrl(format) {
 
 // Export CSV (server-generated, includes ALL filtered records + summary)
 function exportCSV() {
-    window.location.href = buildExportUrl('excel');
+    window.location.href = buildExportUrl('csv');
     showToast('<?php echo t('export_success'); ?>', 'success');
 }
 
