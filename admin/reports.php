@@ -189,6 +189,9 @@ $supervisors = $stmt->fetchAll();
 if ($export_format === 'pdf') {
     exportReportPDF($report_data, $start_date, $end_date, $total_hours, $avg_hours, $report_type);
     exit;
+} elseif ($export_format === 'csv') {
+    exportReportCsv($report_data, $start_date, $end_date, $total_hours, $avg_hours, $report_type);
+    exit;
 } elseif ($export_format === 'excel') {
     exportReportExcel($report_data, $start_date, $end_date, $total_hours, $avg_hours, $report_type);
     exit;
@@ -264,9 +267,9 @@ include_once '../includes/header.php';
                 </div>
             </div>
             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                <button type="submit" class="btn btn-primary"><?php echo t('generate_report'); ?></button>
-                <button type="button" class="btn btn-success" onclick="exportReport('pdf')">📄 <?php echo t('export_pdf'); ?></button>
-                <button type="button" class="btn btn-primary" onclick="exportReport('excel')">📊 <?php echo t('export_excel'); ?></button>
+                <button type="button" class="btn btn-primary" onclick="exportReport('pdf')">📄 <?php echo t('export_pdf'); ?></button>
+                <button type="button" class="btn btn-success" onclick="exportReport('csv')"><?php echo t('export_csv'); ?></button>
+                <button type="button" class="btn btn-success" onclick="exportReport('excel')">📊 <?php echo t('export_excel'); ?></button>
             </div>
         </form>
     </div>

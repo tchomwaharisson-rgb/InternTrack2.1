@@ -4,7 +4,7 @@ $role = $_SESSION['user_role'] ?? '';
 $user = getUserData($_SESSION['user_id'] ?? 0);
 $current_year = date('Y');
 ?>
-<footer class="footer">
+<footer class="footer" style="margin-left: <?php echo (isset($_SESSION['sidebar_collapsed']) && $_SESSION['sidebar_collapsed']) ? '70px' : '260px'; ?>; width: calc(100% - <?php echo (isset($_SESSION['sidebar_collapsed']) && $_SESSION['sidebar_collapsed']) ? '70px' : '260px'; ?>);">
     <div class="footer-container">
         <!-- Footer Main Content -->
         <div class="footer-grid">

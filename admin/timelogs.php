@@ -88,13 +88,16 @@ $month_start = date('Y-m-01');
 if (!empty($export_format)) {
     require_once __DIR__ . '/export_functions.php';
 
-    if ($export_format === 'pdf') {
+     if ($export_format === 'pdf') {
         exportTimelogsPDF($timelogs, $date_from, $date_to, $total_hours, $total_days, $total_interns_logged, $avg_hours);
+        exit;
+    } elseif ($export_format === 'csv') {
+        exportTimelogsCsv($timelogs, $date_from, $date_to, $total_hours, $total_days, $total_interns_logged, $avg_hours);
         exit;
     } elseif ($export_format === 'excel') {
         exportTimelogsExcel($timelogs, $date_from, $date_to, $total_hours, $total_days, $total_interns_logged, $avg_hours);
         exit;
-    }
+}
 }
 
 include_once '../includes/header.php';
@@ -194,7 +197,10 @@ include_once '../includes/header.php';
                     <button type="button" class="btn btn-success" onclick="exportCSV()">
                         📊 <?php echo t('export_csv'); ?>
                     </button>
-                    <button type="button" class="btn btn-danger" onclick="exportPDF()">
+                    <button type="button" class="btn btn-success" onclick="exportExcel()">
+                        📊 <?php echo t('export_excel'); ?>
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="exportPDF()">
                         📄 <?php echo t('export_pdf'); ?>
                     </button>
                 </div>
@@ -452,7 +458,12 @@ function buildExportUrl(format) {
 
 // Export CSV (server-generated, includes ALL filtered records + summary)
 function exportCSV() {
-    window.location.href = buildExportUrl('excel');
+     window.location.href = buildExportUrl('csv');
+    showToast('<?php echo t('export_success'); ?>', 'success');
+}
+// Export Excel (server-generated, includes ALL filtered records + summary)
+function exportExcel() {
+     window.location.href = buildExportUrl('excel');
     showToast('<?php echo t('export_success'); ?>', 'success');
 }
 

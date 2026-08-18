@@ -650,6 +650,11 @@ $translations = [
     'generated_by' => 'Généré par',
     'no_timelogs_found' => 'Aucun journal de temps trouvé pour la période sélectionnée',
     'internship_report' => 'Rapport de stage',
+    'export_csv' => 'Exporter au format CSV',
+    'export_pdf' => 'Exporter au format PDF',
+    'export_excel' => 'Exporter au format Excel',
+    'all_supervisors' => 'Tous les superviseurs',
+    'all_interns' => 'Tous les stagiaires',
 
     // ============ NOTIFICATIONS ============
     'notifications' => 'Notifications',
