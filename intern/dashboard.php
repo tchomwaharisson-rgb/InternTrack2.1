@@ -88,6 +88,12 @@ $unread_messages = $stmt->fetchColumn();
 include_once '../includes/header.php';
 ?>
 
+<style>
+    [data-theme="dark"] .stat-card .stat-value {
+        color: white;
+    }
+</style>
+
 <div class="main-content">
     <!-- Welcome Section -->
     <div class="welcome-section" style="margin-bottom: 24px;">
@@ -135,18 +141,18 @@ include_once '../includes/header.php';
     <div class="quick-actions">
         <h3><?php echo t('quick_actions'); ?></h3>
         <div class="action-buttons">
-            <?php if ($status === 'not_started'): ?>
+            <?php if ($status === t('not_started')): ?>
                 <button class="btn btn-primary" onclick="clockIn()">
                     <span>✅</span> <?php echo t('clock_in'); ?>
                 </button>
-            <?php elseif ($status === 'working'): ?>
+            <?php elseif ($status === t('working')): ?>
                 <button class="btn btn-warning" onclick="startBreak()">
                     <span>⏸️</span> <?php echo t('start_break'); ?>
                 </button>
                 <button class="btn btn-danger" onclick="clockOut()">
                     <span>🚪</span> <?php echo t('clock_out'); ?>
                 </button>
-            <?php elseif ($status === 'on_break'): ?>
+            <?php elseif ($status === t('on_break')): ?>
                 <button class="btn btn-success" onclick="endBreak()">
                     <span>▶️</span> <?php echo t('end_break'); ?>
                 </button>
@@ -175,7 +181,7 @@ include_once '../includes/header.php';
         <div class="card-header">
             <h3 class="card-title"><?php echo t('today_status'); ?></h3>
             <span class="status-badge <?php echo $status; ?>">
-                <?php echo ucfirst(str_replace('_', ' ', $status)); ?>
+                <?php echo  ucfirst(str_replace('_', ' ', t($status))); ?>
             </span>
         </div>
         <?php if ($today_timelog): ?>
@@ -249,7 +255,7 @@ include_once '../includes/header.php';
                                 <td><?php echo number_format($log['total_hours'], 2); ?></td>
                                 <td>
                                     <span class="status-badge <?php echo $log['status']; ?>">
-                                        <?php echo ucfirst($log['status']); ?>
+                                        <?php echo ucfirst(t($log['status'])); ?>
                                     </span>
                                 </td>
                             </tr>
@@ -279,7 +285,7 @@ include_once '../includes/header.php';
                             </div>
                         </div>
                         <span class="status-badge <?php echo $goal['status']; ?>">
-                            <?php echo ucfirst(str_replace('_', ' ', $goal['status'])); ?>
+                            <?php echo ucfirst(str_replace('_', ' ', t($goal['status']))); ?>
                         </span>
                     </div>
                     <div style="margin-top: 8px;">

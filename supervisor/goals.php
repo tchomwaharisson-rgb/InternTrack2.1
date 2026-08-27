@@ -146,6 +146,12 @@ $overdue_goals = count(array_filter($goals, function($g) { return $g['status'] =
 include_once '../includes/header.php';
 ?>
 
+<style>
+    [data-theme="dark"] .stat-card .stat-value {
+        color: white;
+    }
+</style>
+
 <div class="main-content">
     <?php if ($message): ?>
         <div class="toast toast-<?php echo $message_type; ?>"><?php echo $message; ?></div>

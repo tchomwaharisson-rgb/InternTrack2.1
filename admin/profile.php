@@ -116,6 +116,12 @@ $avatar_url = $profile_picture ? '/interntrack/uploads/profiles/' . $profile_pic
 include_once '../includes/header.php';
 ?>
 
+<style>
+    [data-theme="dark"] .stat-card .stat-value {
+        color: white;
+    }
+</style>
+
 <div class="main-content">
     <?php if ($message): ?>
         <div class="toast toast-<?php echo $message_type; ?>"><?php echo $message; ?></div>

@@ -29,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 exit;
             }
             
-            // Verify the receiver is valid (intern or supervisor)
+            // Verify the receiver is valid
             if ($user_role === 'supervisor') {
                 // Verify this is an assigned intern
                 $stmt = $conn->prepare("SELECT user_id FROM interns WHERE user_id = ? AND supervisor_id = ?");
@@ -58,22 +58,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 // Send notification to receiver with correct link
                 $sender = getUserData($user_id);
+                $sender_name = $sender['first_name'] . ' ' . $sender['last_name'];
                 
-                // Determine the correct chat URL based on receiver's role
+                // Determine the correct chat URL based on who is sending and receiving
                 $receiver_data = getUserData($receiver_id);
                 $receiver_role = $receiver_data['role'] ?? 'intern';
                 
-                // Build the correct link
+                // Build the correct link for the receiver
+                // If receiver is a supervisor, they should go to supervisor/chat.php
+                // If receiver is an intern, they should go to intern/chat.php
                 if ($receiver_role === 'supervisor') {
-                    $chat_link = '/interntrack/intern/chat.php?user_id=' . $user_id;
-                } else {
                     $chat_link = '/interntrack/supervisor/chat.php?user_id=' . $user_id;
+                } else {
+                    $chat_link = '/interntrack/intern/chat.php?user_id=' . $user_id;
                 }
                 
-                // Create notification with proper sender name and link
-                $sender_name = $sender['first_name'] . ' ' . $sender['last_name'];
+                // Create notification with proper link
                 $notification_message = t('notification_message', ['sender' => $sender_name]);
-                createNotification($receiver_id, 'message', $notification_message, $chat_link);
+                $result = createNotification($receiver_id, 'message', $notification_message, $chat_link);
+                
+                // Debug: Log the result
+                error_log("Notification created: " . ($result ? 'Success' : 'Failed'));
+                error_log("Notification link: " . $chat_link);
                 
                 echo json_encode(['success' => true, 'message_id' => $message_id]);
             } else {

@@ -215,9 +215,6 @@ include_once '../includes/header.php';
                         <option value="performance" <?php echo $report_type === 'performance' ? 'selected' : ''; ?>>
                             📊 <?php echo t('performance_report'); ?>
                         </option>
-                        <option value="attendance" <?php echo $report_type === 'attendance' ? 'selected' : ''; ?>>
-                            📅 <?php echo t('attendance_report'); ?>
-                        </option>
                         <option value="summary" <?php echo $report_type === 'summary' ? 'selected' : ''; ?>>
                             📋 <?php echo t('summary_report'); ?>
                         </option>

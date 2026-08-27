@@ -32,19 +32,19 @@ foreach ($interns as &$intern) {
     
     if ($log && $log['clock_in'] && !$log['clock_out']) {
         if ($log['break_start'] && !$log['break_end']) {
-            $intern['today_status'] = 'on_break';
+            $intern['today_status'] = t('on_break');
         } else {
-            $intern['today_status'] = 'working';
+            $intern['today_status'] = t('working');
         }
         $intern['today_log'] = $log;
     } elseif ($log && $log['clock_in'] && $log['clock_out']) {
-        $intern['today_status'] = 'completed';
+        $intern['today_status'] = t('completed');
         $intern['today_log'] = $log;
     } elseif ($log && !$log['clock_in']) {
-        $intern['today_status'] = 'missed';
+        $intern['today_status'] = t('missed');
         $intern['today_log'] = $log;
     } else {
-        $intern['today_status'] = 'not_started';
+        $intern['today_status'] = t('not_started');
         $intern['today_log'] = null;
     }
 }
@@ -56,12 +56,12 @@ include_once '../includes/header.php';
     <div class="card">
         <div class="card-header">
             <h3 class="card-title"><?php echo t('assigned_interns'); ?></h3>
-            <span><?php echo count($interns); ?> interns</span>
+            <span><?php echo count($interns); ?> <?php echo t('interns'); ?></span>
         </div>
         
-        <?php if ($interns): ?>
-            <div class="table-container">
-                <table class="table">
+         <?php if (!empty($interns)):?>            
+            <div class="table-container">           
+                <table class="table">      
                     <thead>
                         <tr>
                             <th>Intern</th>
@@ -71,55 +71,59 @@ include_once '../includes/header.php';
                             <th>Active Goals</th>
                             <th>Actions</th>
                         </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($interns as $intern): ?>
+                    </thead>           
+                    <tbody> 
+                         <script>console.log('Interns data:', <?php echo json_encode($interns); ?>);</script>
+                            
+                        <?php for ($i = 0; $i < count($interns); $i++): ?>
+                             <script>console.log('Interns data:', <?php echo json_encode($interns); ?>);</script>
+                            
                             <tr>
                                 <td>
-                                    <strong><?php echo htmlspecialchars($intern['first_name'] . ' ' . $intern['last_name']); ?></strong>
+                                    <strong><?php echo htmlspecialchars($interns[$i]['first_name'] . ' ' . $interns[$i]['last_name']); ?></strong>
                                     <div style="font-size: 12px; color: var(--secondary-text);">
-                                        <?php echo htmlspecialchars($intern['email']); ?>
+                                        <?php echo htmlspecialchars($interns[$i]['email']); ?>
                                     </div>
-                                    <?php if ($intern['start_date'] && $intern['end_date']): ?>
+                                    <?php if ($interns[$i]['start_date'] && $interns[$i]['end_date']): ?>
                                         <div style="font-size: 12px; color: var(--secondary-text);">
-                                            <?php echo date('M d, Y', strtotime($intern['start_date'])); ?> - 
-                                            <?php echo date('M d, Y', strtotime($intern['end_date'])); ?>
+                                            <?php echo date('M d, Y', strtotime($interns[$i]['start_date'])); ?> - 
+                                            <?php echo date('M d, Y', strtotime($interns[$i]['end_date'])); ?>
                                         </div>
                                     <?php endif; ?>
                                 </td>
                                 <td>
-                                    <?php echo htmlspecialchars($intern['school'] ?? 'N/A'); ?>
-                                    <?php if ($intern['field_of_study']): ?>
+                                    <?php echo htmlspecialchars($interns[$i]['school'] ?? 'N/A'); ?>
+                                    <?php if ($interns[$i]['field_of_study']): ?>
                                         <div style="font-size: 12px; color: var(--secondary-text);">
-                                            <?php echo htmlspecialchars($intern['field_of_study']); ?>
+                                            <?php echo htmlspecialchars($interns[$i]['field_of_study']); ?>
                                         </div>
                                     <?php endif; ?>
                                 </td>
                                 <td>
-                                    <span class="status-badge <?php echo $intern['today_status']; ?>">
-                                        <?php echo ucfirst(str_replace('_', ' ', $intern['today_status'])); ?>
+                                    <span class="status-badge <?php echo $interns[$i]['today_status']; ?>">
+                                        <?php echo ucfirst(str_replace('_', ' ', $interns[$i]['today_status'])); ?>
                                     </span>
                                 </td>
                                 <td>
                                     <?php 
-                                        if ($intern['today_log'] && $intern['today_log']['total_hours'] > 0) {
-                                            echo number_format($intern['today_log']['total_hours'], 2) . 'h';
+                                        if ($interns[$i]['today_log'] && $interns[$i]['today_log']['total_hours'] > 0) {
+                                            echo number_format($interns[$i]['today_log']['total_hours'], 2) . 'h';
                                         } else {
                                             echo '-';
                                         }
                                     ?>
                                 </td>
                                 <td>
-                                    <?php echo $intern['active_goals']; ?>
-                                    <?php if ($intern['active_goals'] > 0): ?>
+                                    <?php echo $interns[$i]['active_goals']; ?>
+                                    <?php if ($interns[$i]['active_goals'] > 0): ?>
                                         <span style="font-size: 12px; color: var(--secondary-text);">active</span>
                                     <?php endif; ?>
                                 </td>
                                 <td>
                                     <div style="display: flex; gap: 4px; flex-wrap: wrap;">
-                                        <a href="/interntrack/supervisor/timelogs.php?intern_id=<?php echo $intern['id']; ?>" 
-                                           class="btn btn-sm btn-secondary"><?php echo t('view'); ?></a>
-                                        <a href="/interntrack/supervisor/chat.php?user_id=<?php echo $intern['id']; ?>" 
+                                    <a href="/interntrack/supervisor/timelogs.php?intern_id=<?php echo $intern['id']; ?>" 
+                                       class="btn btn-sm btn-secondary"><?php echo t('view'); ?></a>
+                                    <a href="/interntrack/supervisor/chat.php?user_id=<?php echo $intern['id']; ?>" 
                                            class="btn btn-sm btn-primary">Chat</a>
                                         <a href="/interntrack/supervisor/goals.php?intern_id=<?php echo $intern['id']; ?>" 
                                            class="btn btn-sm btn-warning">Goals</a>
@@ -128,16 +132,16 @@ include_once '../includes/header.php';
                                     </div>
                                 </td>
                             </tr>
-                        <?php endforeach; ?>
+                        <?php endfor; ?>
                     </tbody>
                 </table>
             </div>
         <?php else: ?>
             <div style="text-align: center; padding: 40px 0;">
                 <div style="font-size: 48px; margin-bottom: 16px;">👥</div>
-                <h3>No Interns Assigned</h3>
-                <p style="color: var(--secondary-text);">You haven't been assigned any interns yet.</p>
-                <p style="color: var(--secondary-text); font-size: 14px;">Contact the administrator to get interns assigned to you.</p>
+                <h3><?php echo t('no_interns_assigned'); ?></h3>
+                <p style="color: var(--secondary-text);"><?php echo t('no_interns_assigned_message'); ?></p>
+                <p style="color: var(--secondary-text); font-size: 14px;"><?php echo t('contact_admin_to_assign_interns'); ?></p>
             </div>
         <?php endif; ?>
     </div>

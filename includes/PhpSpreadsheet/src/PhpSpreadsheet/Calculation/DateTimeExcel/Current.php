@@ -47,7 +47,7 @@ class Current
      * Excel Function:
      *        NOW()
      *
-     * @return DateTime|float|int|string Excel date/time serial value, PHP date/time serial value or PHP date/time object,
+     * @return DateTime|float|int|string Excel date/time serial value, PHP date/time serial value or PHP date/ object,
      *                        depending on the value of the ReturnDateType flag
      */
     public static function now(): DateTime|float|int|string

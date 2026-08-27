@@ -154,6 +154,12 @@ $completion_rate = $total_goals > 0 ? round(($completed_goals / $total_goals) * 
 include_once '../includes/header.php';
 ?>
 
+<style>
+    [data-theme="dark"] .stat-card .stat-value {
+        color: white;
+    }
+</style>
+
 <div class="main-content">
     <?php if ($message): ?>
         <div class="toast toast-<?php echo $message_type; ?>"><?php echo $message; ?></div>
@@ -226,7 +232,7 @@ include_once '../includes/header.php';
                             </div>
                             <div style="text-align: right;">
                                 <span class="status-badge <?php echo $goal['status']; ?>">
-                                    <?php echo ucfirst(str_replace('_', ' ', $goal['status'])); ?>
+                                    <?php echo ucfirst(str_replace('_', ' ', t($goal['status']))); ?>
                                 </span>
                             </div>
                         </div>

@@ -86,6 +86,12 @@ foreach ($timelogs as $log) {
 include_once '../includes/header.php';
 ?>
 
+<style>
+    [data-theme="dark"] .stat-card .stat-value {
+        color: white;
+    }
+</style>
+
 <div class="main-content">
     <!-- Stats Cards -->
     <div class="stats-grid">

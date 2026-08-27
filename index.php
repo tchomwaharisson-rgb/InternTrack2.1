@@ -254,7 +254,7 @@ $recent_activities = $stmt->fetchAll();
 </head>
 <body>
     <!-- Header -->
-    <header class="header" style="position: relative; margin-bottom: 0;">
+    <header class="header" style="position: fixed; margin-bottom: 0;">
         <a href="/interntrack/" class="header-brand">
             <!DOCTYPE html>
             <html>
@@ -455,7 +455,7 @@ $recent_activities = $stmt->fetchAll();
                     <span class="activity-time"><?php echo date('H:i', strtotime($activity['clock_in'])); ?></span>
                     <span class="activity-text">
                         <strong><?php echo htmlspecialchars($activity['first_name'] . ' ' . $activity['last_name']); ?></strong> 
-                        clocked in
+                        <?php echo t('clocked_in'); ?>
                     </span>
                 </div>
             <?php endforeach; ?>
@@ -463,12 +463,7 @@ $recent_activities = $stmt->fetchAll();
         <?php endif; ?>
 
         <!-- Footer -->
-        <div class="footer-landing">
-            <p>&copy; <?php echo date('Y'); ?> <?php echo t('app_name'); ?>. <?php echo t('all_rights_reserved'); ?></p>
-            <p style="font-size: 13px; margin-top: 4px;">
-                <?php echo t('built_with_heart'); ?>
-            </p>
-        </div>
+        <?php include_once './includes/footer.php'; ?>
     </div>
 
     <script>

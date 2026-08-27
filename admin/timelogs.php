@@ -103,6 +103,12 @@ if (!empty($export_format)) {
 include_once '../includes/header.php';
 ?>
 
+<style>
+    [data-theme="dark"] .stat-card .stat-value {
+        color: white;
+    }
+</style>
+
 <div class="main-content">
     <!-- Stats Cards -->
     <div class="stats-grid">
@@ -279,7 +285,7 @@ include_once '../includes/header.php';
                                 </td>
                                 <td>
                                     <span class="status-badge <?php echo $log['status']; ?>">
-                                        <?php echo ucfirst($log['status']); ?>
+                                        <?php echo ucfirst(t($log['status'])); ?>
                                     </span>
                                 </td>
                                 <td>

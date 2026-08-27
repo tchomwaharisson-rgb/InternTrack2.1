@@ -77,11 +77,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 $sql = "SELECT * FROM leave_requests WHERE intern_id = ?";
 $params = [$user_id];
 
-if ($filter === 'pending') {
+if ($filter === t('pending')) {
     $sql .= " AND status = 'pending'";
-} elseif ($filter === 'approved') {
+} elseif ($filter === t('approved')) {
     $sql .= " AND status = 'approved'";
-} elseif ($filter === 'rejected') {
+} elseif ($filter === t('rejected')) {
     $sql .= " AND status = 'rejected'";
 }
 
@@ -99,9 +99,9 @@ while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
     $status_counts[$row['status']] = $row['count'];
 }
 
-$pending_count = $status_counts['pending'] ?? 0;
-$approved_count = $status_counts['approved'] ?? 0;
-$rejected_count = $status_counts['rejected'] ?? 0;
+$pending_count = $status_counts[t('pending')] ?? 0;
+$approved_count = $status_counts[t('approved')] ?? 0;
+$rejected_count = $status_counts[t('rejected')] ?? 0;
 
 // Get user data
 $user = getUserData($user_id);
@@ -114,6 +114,12 @@ $supervisor = $stmt->fetch(PDO::FETCH_ASSOC);
 include_once '../includes/header.php';
 ?>
 
+<style>
+    [data-theme="dark"] .stat-card .stat-value {
+        color: white;
+    }
+</style>
+
 <div class="main-content">
     <?php if ($message): ?>
         <div class="toast toast-<?php echo $message_type; ?>"><?php echo $message; ?></div>
@@ -121,12 +127,12 @@ include_once '../includes/header.php';
     
     <!-- Stats Cards -->
     <div class="stats-grid">
-        <div class="stat-card <?php echo $filter === 'pending' ? 'active' : ''; ?>" style="border-left-color: #f59e0b; cursor: pointer;" onclick="window.location.href='?filter=pending'">
+        <div class="stat-card <?php echo $filter === t('pending') ? 'active' : ''; ?>" style="border-left-color: #f59e0b; cursor: pointer;" onclick="window.location.href='?filter=" . t('pending') . "'"">
             <div class="stat-icon">⏳</div>
             <div class="stat-value"><?php echo $pending_count; ?></div>
             <div class="stat-label"><?php echo t('pending'); ?></div>
         </div>
-        <div class="stat-card <?php echo $filter === 'approved' ? 'active' : ''; ?>" style="border-left-color: #16a34a; cursor: pointer;" onclick="window.location.href='?filter=approved'">
+        <div class="stat-card <?php echo $filter === t('approved') ? 'active' : ''; ?>" style="border-left-color: #16a34a; cursor: pointer;" onclick="window.location.href='?filter=" . t('approved') . "'"">
             <div class="stat-icon">✅</div>
             <div class="stat-value"><?php echo $approved_count; ?></div>
             <div class="stat-label"><?php echo t('approved'); ?></div>

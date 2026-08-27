@@ -99,6 +99,12 @@ if (!empty($intern_ids)) {
 include_once '../includes/header.php';
 ?>
 
+<style>
+    [data-theme="dark"] .stat-card .stat-value {
+        color: white;
+    }
+</style>
+
 <div class="main-content">
     <!-- Welcome Section -->
     <div class="welcome-section" style="margin-bottom: 24px;">
@@ -166,6 +172,7 @@ include_once '../includes/header.php';
             <span style="font-size: 14px; color: var(--gray-500);"><?php echo date('M d, Y'); ?></span>
         </div>
         <?php if (!empty($interns)): ?>
+            <script>console.log('Interns data:', <?php echo json_encode($interns); ?>);</script>
             <div class="table-container">
                 <table class="table">
                     <thead>
@@ -203,7 +210,7 @@ include_once '../includes/header.php';
                                 </td>
                                 <td>
                                     <span class="status-badge <?php echo $status; ?>">
-                                        <?php echo ucfirst(str_replace('_', ' ', $status)); ?>
+                                        <?php echo ucfirst(str_replace('_', ' ', t($status))); ?>
                                     </span>
                                 </td>
                                 <td><?php echo (!empty($timelog) && !empty($timelog['clock_in'])) ? formatTime($timelog['clock_in']) : '-'; ?></td>

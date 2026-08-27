@@ -4,7 +4,7 @@ $role = $_SESSION['user_role'] ?? '';
 $user = getUserData($_SESSION['user_id'] ?? 0);
 $current_year = date('Y');
 ?>
-<footer class="footer" style="margin-left: <?php echo (isset($_SESSION['sidebar_collapsed']) && $_SESSION['sidebar_collapsed']) ? '70px' : '260px'; ?>; width: calc(100% - <?php echo (isset($_SESSION['sidebar_collapsed']) && $_SESSION['sidebar_collapsed']) ? '70px' : '260px'; ?>);">
+<footer class="footer" style="margin-left: <?php if (isLoggedIn()) { echo (isset($_SESSION['sidebar_collapsed']) && $_SESSION['sidebar_collapsed']) ? '70px' : '260px'; } ?>; width: calc(100% - <?php if (isLoggedIn()) { echo (isset($_SESSION['sidebar_collapsed']) && $_SESSION['sidebar_collapsed']) ? '70px' : '260px'; }?>);">
     <div class="footer-container">
         <!-- Footer Main Content -->
         <div class="footer-grid">
@@ -124,37 +124,53 @@ $current_year = date('Y');
             <div class="footer-col">
                 <h4 class="footer-title"><?php echo t('quick_links'); ?></h4>
                 <ul class="footer-links">
-                    <li><a href="/interntrack/<?php echo $role; ?>/dashboard.php">📊 <?php echo t('dashboard'); ?></a></li>
                     <?php if ($role === 'intern'): ?>
-                        <li><a href="/interntrack/intern/timelog.php">⏱️ <?php echo t('timelog'); ?></a></li>
+                        <li><a href="/interntrack/intern/dashboard.php">📊 <?php echo t('dashboard'); ?></a></li>
+                        <li><a href="/interntrack/intern/timelogs.php">⏱️ <?php echo t('timelog'); ?></a></li>
                         <li><a href="/interntrack/intern/goals.php">🎯 <?php echo t('goals'); ?></a></li>
                         <li><a href="/interntrack/intern/leave.php">📅 <?php echo t('leave'); ?></a></li>
                         <li><a href="/interntrack/intern/chat.php">💬 <?php echo t('chat'); ?></a></li>
                     <?php elseif ($role === 'supervisor'): ?>
+                        <li><a href="/interntrack/supervisor/dashboard.php">📊 <?php echo t('dashboard'); ?></a></li>
                         <li><a href="/interntrack/supervisor/interns.php">👥 <?php echo t('assigned_interns'); ?></a></li>
                         <li><a href="/interntrack/supervisor/timelogs.php">⏱️ <?php echo t('timelog'); ?></a></li>
                         <li><a href="/interntrack/supervisor/goals.php">🎯 <?php echo t('goals'); ?></a></li>
                         <li><a href="/interntrack/supervisor/chat.php">💬 <?php echo t('chat'); ?></a></li>
                     <?php elseif ($role === 'admin'): ?>
+                        <li><a href="/interntrack/admin/dashboard.php">📊 <?php echo t('dashboard'); ?></a></li>
                         <li><a href="/interntrack/admin/users.php">👥 <?php echo t('user_management'); ?></a></li>
                         <li><a href="/interntrack/admin/requests.php">📝 <?php echo t('registration_requests'); ?></a></li>
                         <li><a href="/interntrack/admin/timelogs.php">⏱️ <?php echo t('timelog'); ?></a></li>
                         <li><a href="/interntrack/admin/settings.php">⚙️ <?php echo t('system_settings'); ?></a></li>
                         <li><a href="/interntrack/admin/reports.php">📊 <?php echo t('system_reports'); ?></a></li>
+                    <?php else: ?>
+                        <li><a href="/interntrack/auth/login.php">🔑 <?php echo t('login'); ?></a></li>
+                        <li><a href="/interntrack/auth/register.php">📝 <?php echo t('register'); ?></a></li>
                     <?php endif; ?>
                 </ul>
             </div>
             
             <!-- Column 3: Account Links -->
             <div class="footer-col">
-                <h4 class="footer-title"><?php echo t('account'); ?></h4>
                 <ul class="footer-links">
-                    <li><a href="/interntrack/profile.php">👤 <?php echo t('profile'); ?></a></li>
-                    <li><a href="/interntrack/notifications.php">🔔 <?php echo t('notifications'); ?></a></li>
                     <?php if ($role === 'admin'): ?>
-                        <li><a href="/interntrack/admin/settings.php">⚙️ <?php echo t('settings'); ?></a></li>
+                        <h4 class="footer-title"><?php echo t('account'); ?></h4>
+                        <li><a href="/interntrack/admin/profile.php">👤 <?php echo t('profile'); ?></a></li>
+                        <li><a href="/interntrack/notifications.php">🔔 <?php echo t('notifications'); ?></a></li>
+                        <li><a href="/interntrack/auth/logout.php" class="logout-link">🚪 <?php echo t('logout'); ?></a></li>
+                    <?php elseif ($role === 'supervisor'): ?>
+                        <h4 class="footer-title"><?php echo t('account'); ?></h4>
+                        <li><a href="/interntrack/supervisor/profile.php">👤 <?php echo t('profile'); ?></a></li>
+                        <li><a href="/interntrack/notifications.php">🔔 <?php echo t('notifications'); ?></a></li>
+                        <li><a href="/interntrack/auth/logout.php" class="logout-link">🚪 <?php echo t('logout'); ?></a></li>
+                    <?php elseif ($role === 'intern'): ?>
+                        <h4 class="footer-title"><?php echo t('account'); ?></h4>
+                        <li><a href="/interntrack/intern/profile.php">👤 <?php echo t('profile'); ?></a></li>
+                        <li><a href="/interntrack/notifications.php">🔔 <?php echo t('notifications'); ?></a></li>
+                        <li><a href="/interntrack/auth/logout.php" class="logout-link">🚪 <?php echo t('logout'); ?></a></li>
+                    <?php else: ?>
                     <?php endif; ?>
-                    <li><a href="/interntrack/auth/logout.php" class="logout-link">🚪 <?php echo t('logout'); ?></a></li>
+                    
                 </ul>
             </div>
             

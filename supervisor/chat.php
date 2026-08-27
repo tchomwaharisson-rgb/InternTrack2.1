@@ -131,19 +131,46 @@ include_once '../includes/header.php';
                     </div>
                     
                     <div class="chat-messages" id="chat-messages">
-                        <?php if ($messages): ?>
-                            <?php foreach ($messages as $msg): ?>
-                                <div class="chat-message <?php echo $msg['sender_id'] == $user_id ? 'sent' : 'received'; ?>">
-                                    <?php echo nl2br(htmlspecialchars($msg['message'])); ?>
-                                    <div class="message-time">
-                                        <?php echo date('H:i', strtotime($msg['created_at'])); ?>
-                                        <?php if ($msg['sender_id'] == $user_id): ?>
-                                            <?php echo $msg['is_read'] ? ' ✅' : ' ✓'; ?>
-                                        <?php endif; ?>
-                                    </div>
+                        <?php 
+                        $last_date = '';
+                        if (!empty($messages)): 
+                            foreach ($messages as $msg):
+                                $msg_date = date('Y-m-d', strtotime($msg['created_at']));
+                                $display_date = '';
+                                
+                                // Check if this is a new day
+                                if ($msg_date != $last_date) {
+                                    $last_date = $msg_date;
+                                    $display_date = t(date('l, M d, Y', strtotime($msg['created_at'])));
+                                    
+                                    // Check if it's today or yesterday
+                                    $today = date('Y-m-d');
+                                    $yesterday = date('Y-m-d', strtotime('-1 day'));
+                                    if ($msg_date == $today) {
+                                        $display_date = t('today');
+                                    } elseif ($msg_date == $yesterday) {
+                                        $display_date = t('yesterday');
+                                    }
+                                }
+                        ?>
+                            <?php if ($display_date): ?>
+                                <div class="date-separator">
+                                    <span class="date-separator-text"><?php echo t($display_date); ?></span>
                                 </div>
-                            <?php endforeach; ?>
-                        <?php else: ?>
+                            <?php endif; ?>
+                            <div class="chat-message <?php echo $msg['sender_id'] == $user_id ? 'sent' : 'received'; ?>">
+                                <?php echo nl2br(htmlspecialchars($msg['message'])); ?>
+                                <div class="message-time">
+                                    <?php echo date('H:i', strtotime($msg['created_at'])); ?>
+                                    <?php if ($msg['sender_id'] == $user_id): ?>
+                                        <?php echo $msg['is_read'] ? ' ✅' : ' ✓'; ?>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        <?php 
+                            endforeach; 
+                        else: 
+                        ?>
                             <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--gray-400);">
                                 <div style="text-align: center;">
                                     <div style="font-size: 36px; margin-bottom: 12px;">💬</div>
@@ -184,6 +211,13 @@ include_once '../includes/header.php';
 <meta name="contact-id" content="<?php echo $selected_user_id; ?>">
 
 <style>
+    .card {
+        height: calc(100vh - 120px) !important;
+        max-height: calc(100vh - 120px);
+        display: flex;
+        flex-direction: column;
+    }
+
     .chat-container {
         display: grid;
         grid-template-columns: 300px 1fr;
@@ -280,10 +314,14 @@ include_once '../includes/header.php';
         color: var(--gray-500);
     }
     
+    /* ===== CHAT MAIN - FIXED STRUCTURE ===== */
     .chat-main {
         display: flex;
         flex-direction: column;
         background: var(--white);
+        height: 100%;
+        min-height: 0;
+        overflow: hidden;
     }
     
     .chat-main .chat-header {
@@ -293,23 +331,30 @@ include_once '../includes/header.php';
         align-items: center;
         gap: 12px;
         flex-shrink: 0;
+        background: var(--white);
+        z-index: 10;
     }
     
+    /* Messages - SCROLLABLE area */
     .chat-main .chat-messages {
         flex: 1;
         overflow-y: auto;
+        overflow-x: hidden;
         padding: 20px;
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 2px;
+        min-height: 0;
+        scroll-behavior: smooth;
     }
     
     .chat-message {
         max-width: 70%;
-        padding: 10px 14px;
+        padding: 8px 12px;
         border-radius: var(--border-radius);
         font-size: 14px;
         word-wrap: break-word;
+        position: relative;
     }
     
     .chat-message.sent {
@@ -321,14 +366,18 @@ include_once '../includes/header.php';
     .chat-message.received {
         align-self: flex-start;
         background: var(--primary-gray);
-        color: solid white;
+        color: black;
     }
     
     .chat-message .message-time {
         font-size: 10px;
         opacity: 0.7;
-        margin-top: 4px;
+        margin-top: 2px;
         text-align: right;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 2px;
     }
     
     .chat-main .chat-input {
@@ -341,16 +390,72 @@ include_once '../includes/header.php';
     
     .chat-main .chat-input input {
         flex: 1;
-        padding: 10px 12px;
+        padding: 10px 14px;
         border: 1px solid var(--gray-200);
-        border-radius: var(--border-radius);
+        border-radius: 20px;
         font-size: 14px;
+        outline: none;
         transition: border-color 0.3s;
     }
     
     .chat-main .chat-input input:focus {
         outline: none;
         border-color: var(--primary-color);
+    }
+
+    .chat-main .chat-input .btn {
+        border-radius: 20px;
+        padding: 10px 20px;
+        flex-shrink: 0;
+    }
+
+    /* Date Separator Styles */
+    .date-separator {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 16px 0 12px 0;
+        position: relative;
+    }
+    
+    .date-separator .date-separator-text {
+        background: var(--gray-200);
+        color: var(--gray-600);
+        padding: 4px 14px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 500;
+        letter-spacing: 0.3px;
+    }
+    
+    body.dark-mode .date-separator .date-separator-text {
+        background: #3a3a3a;
+        color: #9ca3af;
+    }
+    
+    /* Scrollbar Styling */
+    .chat-main .chat-messages::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .chat-main .chat-messages::-webkit-scrollbar-track {
+        background: var(--gray-100);
+        border-radius: 3px;
+    }
+    
+    .chat-main .chat-messages::-webkit-scrollbar-thumb {
+        background: var(--primary-color);
+        border-radius: 3px;
+    }
+    
+    .chat-main .chat-messages::-webkit-scrollbar-thumb:hover {
+        background: var(--primary-dark);
+    }
+    
+    /* Firefox scrollbar */
+    .chat-main .chat-messages {
+        scrollbar-width: thin;
+        scrollbar-color: var(--primary-color) var(--gray-100);
     }
     
     /* Dark Mode */
@@ -407,22 +512,36 @@ include_once '../includes/header.php';
     body.dark-mode .chat-contact .contact-status {
         color: #9ca3af;
     }
+
+    body.dark-mode .chat-main .chat-messages::-webkit-scrollbar-track {
+        background: #2d2d2d;
+    }
+    
+    body.dark-mode .chat-main .chat-messages::-webkit-scrollbar-thumb {
+        background: #dc2626;
+    }
     
     /* Responsive */
     @media (max-width: 768px) {
+        .card {
+            height: calc(100vh - 80px) !important;
+            max-height: calc(100vh - 80px);
+        }
+        
         .chat-container {
             grid-template-columns: 1fr;
-            height: auto;
+            height: 100%;
         }
         
         .chat-sidebar {
-            height: 300px;
+            height: 250px;
             border-right: none;
             border-bottom: 1px solid var(--gray-200);
         }
         
         .chat-main {
-            min-height: 400px;
+            min-height: 0;
+            height: calc(100% - 250px);
         }
     }
     
@@ -440,7 +559,17 @@ include_once '../includes/header.php';
         }
         
         .chat-main .chat-input {
-            padding: 12px 16px;
+            padding: 10px 12px;
+        }
+        
+        .chat-main .chat-input input {
+            font-size: 13px;
+            padding: 8px 12px;
+        }
+        
+        .chat-main .chat-input .btn {
+            padding: 8px 14px;
+            font-size: 13px;
         }
     }
 </style>
@@ -461,7 +590,6 @@ function connectChat() {
         
         chatSocket.onopen = function() {
             console.log('Chat WebSocket connected');
-            reconnectAttempts = 0;
             chatSocket.send(JSON.stringify({
                 type: 'auth',
                 user_id: '<?php echo $user_id; ?>'
@@ -472,19 +600,12 @@ function connectChat() {
             const data = JSON.parse(event.data);
             if (data.type === 'message') {
                 displayMessage(data.message, data.sender_id);
-            } else if (data.type === 'typing') {
-                showTypingIndicator(data.sender_id);
             }
         };
         
         chatSocket.onclose = function() {
             console.log('Chat WebSocket disconnected');
-            // Reconnect with exponential backoff
-            const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
-            reconnectAttempts++;
-            if (reconnectAttempts <= maxReconnectAttempts) {
-                setTimeout(connectChat, delay);
-            }
+            setTimeout(connectChat, 5000);
         };
         
         chatSocket.onerror = function(error) {
@@ -502,7 +623,6 @@ function sendMessage() {
     
     if (!message || !currentContactId) return;
     
-    // Send via WebSocket
     if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
         chatSocket.send(JSON.stringify({
             type: 'send',
@@ -511,7 +631,6 @@ function sendMessage() {
         }));
     }
     
-    // Also send via HTTP as fallback
     fetch('/interntrack/api/chat.php', {
         method: 'POST',
         headers: {
@@ -528,9 +647,13 @@ function sendMessage() {
     .then(data => {
         if (data.success) {
             input.value = '';
-            displayMessage({ message: message, created_at: new Date().toISOString() }, '<?php echo $user_id; ?>');
-            // Hide typing indicator
+            displayMessage({ 
+                message: message, 
+                created_at: new Date().toISOString(),
+                is_read: false
+            }, '<?php echo $user_id; ?>');
             hideTypingIndicator();
+            scrollToBottom();
         } else {
             showToast(data.message || '<?php echo t('error_occurred'); ?>', 'error');
         }
@@ -541,15 +664,70 @@ function sendMessage() {
     });
 }
 
+// Scroll to bottom function
+function scrollToBottom() {
+    const container = document.getElementById('chat-messages');
+    if (container) {
+        container.scrollTop = container.scrollHeight;
+    }
+}
+
 // Display message
 function displayMessage(message, senderId) {
     const container = document.getElementById('chat-messages');
     if (!container) return;
     
-    // Remove typing indicator
     hideTypingIndicator();
     
+    const placeholder = container.querySelector('.no-messages-placeholder');
+    if (placeholder) {
+        placeholder.remove();
+    }
+    
     const isSent = senderId == '<?php echo $user_id; ?>';
+    
+    const msgDate = new Date(message.created_at);
+    const msgDateStr = msgDate.toDateString();
+    
+    const today = new Date();
+    const todayStr = today.toDateString();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toDateString();
+    
+    let displayDate = '';
+    if (msgDateStr === todayStr) {
+        displayDate = 'today';
+    } else if (msgDateStr === yesterdayStr) {
+        displayDate = 'Yesterday';
+    } else {
+        displayDate = msgDate.toLocaleDateString('en-US', { 
+            weekday: 'long', 
+            month: 'short', 
+            day: 'numeric', 
+            year: 'numeric' 
+        });
+    }
+    
+    const lastSeparator = container.querySelector('.date-separator:last-child');
+    let needSeparator = false;
+    
+    if (!lastSeparator) {
+        needSeparator = true;
+    } else {
+        const lastSeparatorText = lastSeparator.textContent.trim();
+        if (lastSeparatorText !== displayDate) {
+            needSeparator = true;
+        }
+    }
+    
+    if (needSeparator) {
+        const separator = document.createElement('div');
+        separator.className = 'date-separator';
+        separator.innerHTML = `<span class="date-separator-text">${displayDate}</span>`;
+        container.appendChild(separator);
+    }
+    
     const div = document.createElement('div');
     div.className = `chat-message ${isSent ? 'sent' : 'received'}`;
     
@@ -558,18 +736,22 @@ function displayMessage(message, senderId) {
     
     const time = document.createElement('div');
     time.className = 'message-time';
-    const msgDate = new Date(message.created_at);
-    time.textContent = msgDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const msgTime = new Date(message.created_at);
+    time.textContent = msgTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    
+    if (isSent) {
+        const check = document.createElement('span');
+        check.textContent = message.is_read ? ' ✅' : ' ✓';
+        time.appendChild(check);
+    }
     
     div.appendChild(content);
     div.appendChild(time);
     container.appendChild(div);
-    container.scrollTop = container.scrollHeight;
+    scrollToBottom();
 }
 
 // Typing indicator
-let typingTimeout = null;
-
 function showTypingIndicator(senderId) {
     if (currentContactId != senderId) return;
     
@@ -582,7 +764,7 @@ function showTypingIndicator(senderId) {
         typing.className = 'chat-message received typing-indicator';
         typing.innerHTML = '<span>...</span> <?php echo t('typing'); ?>';
         container.appendChild(typing);
-        container.scrollTop = container.scrollHeight;
+        scrollToBottom();
     }
 }
 
@@ -636,6 +818,33 @@ function showToast(message, type = 'info') {
 document.addEventListener('DOMContentLoaded', function() {
     connectChat();
     
+    // Scroll to bottom on load
+    setTimeout(scrollToBottom, 100);
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const userId = urlParams.get('user_id');
+    if (userId && userId != '0') {
+        currentContactId = userId;
+        document.querySelectorAll('.chat-contact').forEach(contact => {
+            contact.classList.toggle('active', contact.dataset.contactId == userId);
+        });
+        fetch(`/interntrack/api/chat.php?action=get_messages&contact_id=${userId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const container = document.getElementById('chat-messages');
+                    if (container) {
+                        container.innerHTML = '';
+                        data.messages.forEach(msg => {
+                            displayMessage(msg, msg.sender_id);
+                        });
+                        scrollToBottom();
+                    }
+                }
+            })
+            .catch(error => console.error('Error loading messages:', error));
+    }
+    
     // Auto-refresh messages every 30 seconds
     if (currentContactId) {
         setInterval(() => {
@@ -645,15 +854,34 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (data.success) {
                         const container = document.getElementById('chat-messages');
                         if (container) {
+                            const scrollPos = container.scrollTop;
+                            const scrollHeight = container.scrollHeight;
+                            const isAtBottom = scrollPos >= scrollHeight - container.clientHeight - 50;
+                            
                             container.innerHTML = '';
                             data.messages.forEach(msg => {
                                 displayMessage(msg, msg.sender_id);
                             });
+                            
+                            if (isAtBottom) {
+                                scrollToBottom();
+                            } else {
+                                container.scrollTop = scrollPos;
+                            }
                         }
                     }
                 })
                 .catch(error => console.error('Error refreshing messages:', error));
         }, 30000);
+    }
+    
+    // Resize observer to handle height changes
+    const chatMessages = document.getElementById('chat-messages');
+    if (chatMessages) {
+        const resizeObserver = new ResizeObserver(() => {
+            scrollToBottom();
+        });
+        resizeObserver.observe(chatMessages);
     }
 });
 </script>

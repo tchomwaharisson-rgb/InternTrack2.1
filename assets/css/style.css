@@ -910,7 +910,7 @@ body.dark-mode #profilePreview {
 .chat-message.received {
   align-self: flex-start;
   background: var(--primary-gray);
-  color: white;
+  color: black;
 }
 
 .chat-message .message-time {

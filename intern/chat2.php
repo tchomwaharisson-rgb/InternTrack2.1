@@ -1,4 +1,5 @@
 <?php
+// intern/chat.php
 require_once '../config/config.php';
 require_once '../config/language.php';
 
@@ -10,7 +11,7 @@ if (!isLoggedIn() || !hasRole('intern')) {
 }
 
 $user_id = $_SESSION['user_id'];
-$selected_user_id = $_GET['user_id'] ?? '';
+$selected_user_id = isset($_GET['user_id']) ? (int)$_GET['user_id'] : 0;
 
 // Get supervisor (only one supervisor per intern)
 $stmt = $conn->prepare("SELECT supervisor_id FROM interns WHERE user_id = ?");
@@ -32,14 +33,9 @@ if ($supervisor_id) {
     }
 }
 
-// If no supervisor assigned, show message
-if (empty($contacts)) {
-    // Show a message that no supervisor is assigned yet
-}
-
 // Get messages for selected contact
 $messages = [];
-if ($selected_user_id && $selected_user_id == $supervisor_id) {
+if ($selected_user_id > 0 && $selected_user_id == $supervisor_id) {
     $stmt = $conn->prepare("
         SELECT * FROM messages 
         WHERE (sender_id = ? AND receiver_id = ?) 
@@ -57,22 +53,8 @@ if ($selected_user_id && $selected_user_id == $supervisor_id) {
 include_once '../includes/header.php';
 ?>
 
-<style>
-    .chat-message.sent {
-        align-self: flex-end;
-        background: var(--primary-red);
-        color: solid white;
-    }
-    
-    .chat-message.received {
-        align-self: flex-start;
-        background: var(--primary-gray);
-        color: black;
-    }
-</style>
-
 <div class="main-content">
-    <div class="card" style="padding: 0; overflow: hidden;">
+    <div class="card" style="padding: 0; overflow: hidden; height: calc(100vh - 100px);">
         <div class="chat-container">
             <!-- Sidebar -->
             <div class="chat-sidebar">
@@ -80,7 +62,7 @@ include_once '../includes/header.php';
                     <input type="text" placeholder="<?php echo t('search'); ?> contacts..." id="chat-search">
                 </div>
                 <div class="chat-contacts" id="chat-contacts">
-                    <?php if ($contacts): ?>
+                    <?php if (!empty($contacts)): ?>
                         <?php foreach ($contacts as $contact): ?>
                             <div class="chat-contact <?php echo $selected_user_id == $contact['id'] ? 'active' : ''; ?>" 
                                  data-contact-id="<?php echo $contact['id']; ?>">
@@ -95,7 +77,7 @@ include_once '../includes/header.php';
                                     <div class="contact-name">
                                         <?php echo htmlspecialchars($contact['first_name'] . ' ' . $contact['last_name']); ?>
                                         <?php if ($contact['unread_count'] > 0): ?>
-                                            <span class="badge" style="background: var(--primary-red); color: white; font-size: 10px; padding: 1px 6px; border-radius: 50%; margin-left: 4px;">
+                                            <span class="badge" style="background: var(--primary-color); color: white; font-size: 10px; padding: 1px 6px; border-radius: 50%; margin-left: 4px;">
                                                 <?php echo $contact['unread_count']; ?>
                                             </span>
                                         <?php endif; ?>
@@ -107,7 +89,7 @@ include_once '../includes/header.php';
                             </div>
                         <?php endforeach; ?>
                     <?php else: ?>
-                        <div style="padding: 20px; text-align: center; color: var(--secondary-text);">
+                        <div style="padding: 20px; text-align: center; color: var(--gray-500);">
                             <?php echo t('no_supervisor_assigned'); ?>
                         </div>
                     <?php endif; ?>
@@ -116,12 +98,12 @@ include_once '../includes/header.php';
             
             <!-- Chat Main -->
             <div class="chat-main">
-                <?php if ($selected_user_id && $selected_user_id == $supervisor_id): ?>
+                <?php if ($selected_user_id > 0 && $selected_user_id == $supervisor_id): ?>
                     <?php 
                         $contact = $contacts[0] ?? null;
                     ?>
                     <div class="chat-header">
-                        <div class="contact-avatar" style="width: 40px; height: 40px; border-radius: 50%; background: var(--primary-red); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; flex-shrink: 0;">
+                        <div class="contact-avatar" style="width: 40px; height: 40px; border-radius: 50%; background: var(--primary-color); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; flex-shrink: 0;">
                             <?php 
                                 $name = $contact['first_name'] . ' ' . $contact['last_name'];
                                 $parts = explode(' ', $name);
@@ -130,7 +112,7 @@ include_once '../includes/header.php';
                         </div>
                         <div>
                             <div style="font-weight: 600;"><?php echo htmlspecialchars($contact['first_name'] . ' ' . $contact['last_name']); ?></div>
-                            <div style="font-size: 12px; color: var(--secondary-text);">
+                            <div style="font-size: 12px; color: var(--gray-500);">
                                 <?php echo $contact['is_active'] ? '🟢 Online' : '⚪ Offline'; ?>
                             </div>
                         </div>
@@ -138,30 +120,28 @@ include_once '../includes/header.php';
                     
                     <div class="chat-messages" id="chat-messages">
                         <?php 
-                        $last_date = t('');
+                        $last_date = '';
                         if (!empty($messages)): 
                             foreach ($messages as $msg):
                                 $msg_date = date('Y-m-d', strtotime($msg['created_at']));
-                                $display_date = t('');
+                                $display_date = '';
                                 
-                                // Check if this is a new day
                                 if ($msg_date != $last_date) {
                                     $last_date = $msg_date;
-                                    $display_date = t(date('l, M d, Y', strtotime($msg['created_at'])));
-                                    
-                                    // Check if it's today or yesterday
                                     $today = date('Y-m-d');
                                     $yesterday = date('Y-m-d', strtotime('-1 day'));
                                     if ($msg_date == $today) {
-                                        $display_date = t('today');
+                                        $display_date = 'Today';
                                     } elseif ($msg_date == $yesterday) {
-                                        $display_date = t('yesterday');
+                                        $display_date = 'Yesterday';
+                                    } else {
+                                        $display_date = date('l, M d, Y', strtotime($msg['created_at']));
                                     }
                                 }
                         ?>
                             <?php if ($display_date): ?>
                                 <div class="date-separator">
-                                    <span class="date-separator-text"><?php echo t($display_date); ?></span>
+                                    <span class="date-separator-text"><?php echo $display_date; ?></span>
                                 </div>
                             <?php endif; ?>
                             <div class="chat-message <?php echo $msg['sender_id'] == $user_id ? 'sent' : 'received'; ?>">
@@ -195,10 +175,10 @@ include_once '../includes/header.php';
                         </button>
                     </div>
                 <?php else: ?>
-                    <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--secondary-text);">
+                    <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--gray-400);">
                         <div style="text-align: center;">
                             <div style="font-size: 48px; margin-bottom: 16px;">💬</div>
-                            <h3><?php echo t('select_contact'); ?></h3>
+                            <h3 style="color: var(--gray-600);"><?php echo t('select_contact'); ?></h3>
                             <p style="font-size: 14px;"><?php echo t('select_contact_to_start_chatting'); ?></p>
                         </div>
                     </div>
@@ -274,6 +254,24 @@ include_once '../includes/header.php';
     
     .chat-contact:hover {
         background: var(--gray-50);
+    }
+    
+    .chat-contact.active {
+        background: var(--gray-50);
+        border-left-color: var(--primary-color);
+    }
+    
+    .chat-contact .contact-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--primary-color);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        flex-shrink: 0;
     }
     
     .chat-contact .contact-info {
@@ -361,6 +359,19 @@ include_once '../includes/header.php';
         font-size: 14px;
         word-wrap: break-word;
         position: relative;
+    }
+    
+    .chat-message.sent {
+        align-self: flex-end;
+        background: var(--primary-color);
+        color: white;
+        border-bottom-right-radius: 4px;
+    }
+    
+    .chat-message.received {
+        align-self: flex-start;
+        background: var(--gray-100);
+        border-bottom-left-radius: 4px;
     }
     
     .chat-message .message-time {
@@ -663,7 +674,6 @@ function displayMessage(message, senderId) {
     
     hideTypingIndicator();
     
-    // Remove any existing "No messages" placeholder
     const placeholder = container.querySelector('.no-messages-placeholder');
     if (placeholder) {
         placeholder.remove();
@@ -675,28 +685,12 @@ function displayMessage(message, senderId) {
     const msgDate = new Date(message.created_at);
     const msgDateStr = msgDate.toDateString();
     
-    // Get the last message's date
-    const lastMessage = container.querySelector('.chat-message:last-child');
-    let lastDateStr = '';
-    if (lastMessage) {
-        // Check if there's a date separator before the last message
-        let prevElement = lastMessage.previousElementSibling;
-        while (prevElement && !prevElement.classList.contains('date-separator')) {
-            prevElement = prevElement.previousElementSibling;
-        }
-        if (prevElement && prevElement.classList.contains('date-separator')) {
-            lastDateStr = prevElement.textContent.trim();
-        }
-    }
-    
-    // Get today's date
     const today = new Date();
     const todayStr = today.toDateString();
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayStr = yesterday.toDateString();
     
-    // Determine display date
     let displayDate = '';
     if (msgDateStr === todayStr) {
         displayDate = 'Today';
@@ -711,7 +705,6 @@ function displayMessage(message, senderId) {
         });
     }
     
-    // Check if we need to add a date separator
     const lastSeparator = container.querySelector('.date-separator:last-child');
     let needSeparator = false;
     
@@ -731,7 +724,6 @@ function displayMessage(message, senderId) {
         container.appendChild(separator);
     }
     
-    // Create message element
     const div = document.createElement('div');
     div.className = `chat-message ${isSent ? 'sent' : 'received'}`;
     
@@ -752,8 +744,9 @@ function displayMessage(message, senderId) {
     div.appendChild(content);
     div.appendChild(time);
     container.appendChild(div);
-    container.scrollTop = container.scrollHeight;
+    scrollToBottom();
 }
+
 // Typing indicator
 function showTypingIndicator(senderId) {
     if (currentContactId != senderId) return;

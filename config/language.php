@@ -69,4 +69,80 @@ function timeAgo($datetime) {
         return date('M d, Y', $time);
     }
 }
+
+
+/**
+ * Translate date to current language
+ * @param string $date The date string or timestamp
+ * @param string $format The date format (strftime format)
+ * @return string Formatted date in current language
+ */
+function translateDate($date, $format = '%B %d, %Y') {
+    if (is_string($date)) {
+        $timestamp = strtotime($date);
+    } else {
+        $timestamp = $date;
+    }
+    
+    if ($timestamp === false) {
+        return $date;
+    }
+    
+    // Set locale based on language
+    $lang = $_SESSION['language'] ?? 'en';
+    if ($lang === 'fr') {
+        setlocale(LC_TIME, 'fr_FR.utf8', 'fr_FR', 'fr');
+    } else {
+        setlocale(LC_TIME, 'en_US.utf8', 'en_US', 'en');
+    }
+    
+    return strftime($format, $timestamp);
+}
+
+/**
+ * Translate date to short format
+ */
+function translateDateShort($date) {
+    return translateDate($date, '%b %d, %Y');
+}
+
+/**
+ * Translate date to long format
+ */
+function translateDateLong($date) {
+    return translateDate($date, '%A, %B %d, %Y');
+}
+
+/**
+ * Translate time only
+ */
+function translateTime($date) {
+    return translateDate($date, '%H:%M');
+}
+
+/**
+ * Translate datetime
+ */
+function translateDateTime($date) {
+    return translateDate($date, '%b %d, %Y at %H:%M');
+}
+
+/**
+ * Get translated month name
+ */
+function translateMonth($monthNumber, $short = false) {
+    $format = $short ? '%b' : '%B';
+    $timestamp = mktime(0, 0, 0, $monthNumber, 1, 2024);
+    return translateDate($timestamp, $format);
+}
+
+/**
+ * Get translated day name
+ */
+function translateDay($dayNumber, $short = false) {
+    $format = $short ? '%a' : '%A';
+    // Sunday = 0, Monday = 1, ...
+    $timestamp = mktime(0, 0, 0, 1, $dayNumber + 1, 2024);
+    return translateDate($timestamp, $format);
+}
 ?>

@@ -14,12 +14,12 @@ date_default_timezone_set('Africa/Douala');
 
 // ============ SESSION CONFIGURATION ============
 // Configure session settings BEFORE starting the session
-ini_set('session.gc_maxlifetime', 1800);
-ini_set('session.cookie_lifetime', 1800);
+ini_set('session.gc_maxlifetime', 3600);
+ini_set('session.cookie_lifetime', 3600);
 
 // Set session cookie parameters
 session_set_cookie_params([
-    'lifetime' => 1800,
+    'lifetime' => 3600,
     'path' => '/',
     'domain' => '',
     'secure' => false,
@@ -416,5 +416,55 @@ if ($maintenance_mode === 'true') {
 if (defined('DEBUG') && DEBUG === true) {
     error_log('Current Timezone: ' . date_default_timezone_get());
     error_log('Current DateTime: ' . date('Y-m-d H:i:s'));
+}
+
+require_once __DIR__ . '/email.php';
+require_once __DIR__ . '/../includes/email_templates.php';
+/**
+ * Send registration approval email helper
+ */
+function sendRegistrationApprovalEmail($user_id) {
+    global $conn;
+    
+    try {
+        // Get user data
+        $stmt = $conn->prepare("SELECT u.*, i.school, i.field_of_study FROM users u 
+                                LEFT JOIN interns i ON u.id = i.user_id 
+                                WHERE u.id = ?");
+        $stmt->execute([$user_id]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if (!$user) {
+            return ['success' => false, 'message' => 'User not found'];
+        }
+        
+        $userName = $user['first_name'] . ' ' . $user['last_name'];
+        $email = $user['email'];
+        $role = $user['role'];
+        
+        // Generate email content
+        require_once __DIR__ . '/../includes/email_templates.php';
+        $subject = "Welcome to " . SITE_NAME . " - Your Account Has Been Created";
+        $htmlBody = getRegistrationApprovalEmail($userName, $email, null, $role);
+        
+        // Send email
+        if (function_exists('sendEmail')) {
+            return sendEmail($email, $subject, $htmlBody);
+        } else {
+            return ['success' => false, 'message' => 'Email function not available'];
+        }
+    } catch (Exception $e) {
+        return ['success' => false, 'message' => $e->getMessage()];
+    }
+}
+
+/**
+ * Send custom email helper
+ */
+function sendCustomEmail($to, $subject, $message) {
+    if (function_exists('sendEmail')) {
+        return sendEmail($to, $subject, $message);
+    }
+    return ['success' => false, 'message' => 'Email function not available'];
 }
 ?>

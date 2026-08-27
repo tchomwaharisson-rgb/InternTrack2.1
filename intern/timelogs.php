@@ -49,20 +49,26 @@ if ($today_log) {
 include_once '../includes/header.php';
 ?>
 
+<style>
+    [data-theme="dark"] .stat-card .stat-value {
+        color: white;
+    }
+</style>
+
 <div class="main-content">
     <!-- Today's Status -->
     <div class="card">
         <div class="card-header">
             <h3 class="card-title"><?php echo t('today_status'); ?></h3>
             <span class="status-badge <?php echo $status; ?>">
-                <?php echo ucfirst(str_replace('_', ' ', $status)); ?>
+                <?php echo ucfirst(str_replace('_', ' ', t($status))); ?>
             </span>
         </div>
         <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: center;">
             <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-                <?php if ($status === 'not_started'): ?>
+                <?php if ($status === t('not_started')): ?>
                     <button class="btn btn-primary" onclick="clockIn()">✅ <?php echo t('clock_in'); ?></button>
-                <?php elseif ($status === 'working'): ?>
+                <?php elseif ($status === t('working')): ?>
                     <button class="btn btn-warning" onclick="startBreak()">⏸️ <?php echo t('start_break'); ?></button>
                     <button class="btn btn-danger" onclick="clockOut()">🚪 <?php echo t('clock_out'); ?></button>
                 <?php elseif ($status === 'on_break'): ?>
@@ -148,7 +154,7 @@ include_once '../includes/header.php';
                                 <td><strong><?php echo number_format($log['total_hours'], 2); ?></strong></td>
                                 <td>
                                     <span class="status-badge <?php echo $log['status']; ?>">
-                                        <?php echo ucfirst($log['status']); ?>
+                                        <?php echo ucfirst(t($log['status'])); ?>
                                     </span>
                                 </td>
                             </tr>

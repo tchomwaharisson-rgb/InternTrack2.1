@@ -284,7 +284,7 @@ include_once '../includes/header.php';
                                             <input type="hidden" name="action" value="reset_password">
                                             <input type="hidden" name="user_id" value="<?php echo $user['id']; ?>">
                                             <button type="submit" class="btn btn-sm btn-secondary" onclick="return confirm('Reset password for this user?')">
-                                                🔑 Reset
+                                                🔑 <?php echo t('reset_password'); ?>
                                             </button>
                                         </form>
                                         <form method="POST" action="" style="display: inline;">

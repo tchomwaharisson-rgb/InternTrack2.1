@@ -61,6 +61,12 @@ $break_end = getSetting('break_end') ?? '14:00:00';
 include_once '../includes/header.php';
 ?>
 
+<style>
+    [data-theme="dark"] .stat-card .stat-value {
+        color: white;
+    }
+</style>
+
 <div class="main-content">
     <!-- Welcome Section -->
     <div class="welcome-section" style="margin-bottom: 24px;">
@@ -191,7 +197,7 @@ include_once '../includes/header.php';
                                 <td><?php echo number_format($log['total_hours'], 2); ?></td>
                                 <td>
                                     <span class="status-badge <?php echo $log['status']; ?>">
-                                        <?php echo ucfirst($log['status']); ?>
+                                        <?php echo ucfirst(t($log['status'])); ?>
                                     </span>
                                 </td>
                             </tr>
@@ -230,7 +236,7 @@ include_once '../includes/header.php';
                                 <td><?php echo ucfirst($request['role']); ?></td>
                                 <td>
                                     <span class="status-badge <?php echo $request['status']; ?>">
-                                        <?php echo ucfirst($request['status']); ?>
+                                        <?php echo ucfirst(t($request['status'])); ?>
                                     </span>
                                 </td>
                                 <td><?php echo date('M d, Y', strtotime($request['created_at'])); ?></td>
