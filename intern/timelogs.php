@@ -62,10 +62,10 @@ include_once '../includes/header.php';
             <div style="display: flex; gap: 12px; flex-wrap: wrap;">
                 <?php if ($status === 'not_started'): ?>
                     <button class="btn btn-primary" onclick="clockIn()">✅ <?php echo t('clock_in'); ?></button>
-                <?php elseif ($status === 'working'): ?>
+                <?php elseif ($status === t('working')): ?>
                     <button class="btn btn-warning" onclick="startBreak()">⏸️ <?php echo t('start_break'); ?></button>
                     <button class="btn btn-danger" onclick="clockOut()">🚪 <?php echo t('clock_out'); ?></button>
-                <?php elseif ($status === 'on_break'): ?>
+                <?php elseif ($status === t('on_break')): ?>
                     <button class="btn btn-success" onclick="endBreak()">▶️ <?php echo t('end_break'); ?></button>
                     <button class="btn btn-danger" onclick="clockOut()">🚪 <?php echo t('clock_out'); ?></button>
                 <?php endif; ?>

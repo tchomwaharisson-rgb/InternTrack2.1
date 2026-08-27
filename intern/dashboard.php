@@ -139,14 +139,14 @@ include_once '../includes/header.php';
                 <button class="btn btn-primary" onclick="clockIn()">
                     <span>✅</span> <?php echo t('clock_in'); ?>
                 </button>
-            <?php elseif ($status === 'working'): ?>
+            <?php elseif ($status === t('working')): ?>
                 <button class="btn btn-warning" onclick="startBreak()">
                     <span>⏸️</span> <?php echo t('start_break'); ?>
                 </button>
                 <button class="btn btn-danger" onclick="clockOut()">
                     <span>🚪</span> <?php echo t('clock_out'); ?>
                 </button>
-            <?php elseif ($status === 'on_break'): ?>
+            <?php elseif ($status === t('on_break')): ?>
                 <button class="btn btn-success" onclick="endBreak()">
                     <span>▶️</span> <?php echo t('end_break'); ?>
                 </button>
