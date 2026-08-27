@@ -251,6 +251,10 @@ $translations = [
     'due' => 'Due',
     'clock_out_confirmation' => 'Are you sure you want to clock out?',
     'leave_request_submitted' => 'Leave request submitted successfully.',
+    'Email_sent _successfully' => 'Email sent successfully',
+    'Email_could_not_be_sent._Error: ' => 'Email could not be sent. Error:',
+    'request_not_found_oralready_processed' => 'Request not found or already processed.',
+    'invalid_request_action' => 'Invalid request action.',
 
     // Admin Dashboard
     'admin_dashboard_welcome' => 'Welcome to the administration dashboard. Manage users, registrations, and system settings.',

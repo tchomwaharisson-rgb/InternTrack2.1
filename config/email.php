@@ -18,7 +18,7 @@ define('MAIL_USERNAME', 'fossofrank77@gmail.com');    // Your FULL email address
 define('MAIL_PASSWORD', 'vmuzjbspseodihwx');       // App Password (NOT your regular password)
 define('MAIL_ENCRYPTION', PHPMailer::ENCRYPTION_STARTTLS); // ENCRYPTION_SMTPS for SSL
 define('MAIL_FROM_EMAIL', 'fossofrank77@gmail.com');
-define('MAIL_FROM_NAME', 'InternTrack System');
+define('MAIL_FROM_NAME', 'InternTrack');
 define('MAIL_REPLY_TO', 'noreply@interntrack.com');
 
 /**
@@ -59,9 +59,9 @@ function sendEmailPHPMailer($to, $subject, $htmlBody, $textBody = '') {
         $mail->AltBody = $textBody ?: strip_tags($htmlBody);
         
         $mail->send();
-        return ['success' => true, 'message' => 'Email sent successfully'];
+        return ['success' => true, 'message' => t('Email_sent _successfully')];
     } catch (Exception $e) {
-        return ['success' => false, 'message' => 'Email could not be sent. Error: ' . $mail->ErrorInfo];
+        return ['success' => false, 'message' => t('Email_could_not_be_sent._Error: ') . $mail->ErrorInfo];
     }
 }
 

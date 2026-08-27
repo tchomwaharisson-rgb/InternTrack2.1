@@ -168,7 +168,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 logAudit($_SESSION['user_id'], 'approve_registration', 
                          'Approved request ID: ' . $request_id . ' - Comment: ' . $admin_comment);
             } else {
-                $message = 'Request not found or already processed.';
+                $message = t('Request not found or already processed.');
                 $message_type = 'error';
             }
             break;
@@ -186,13 +186,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $message_type = 'success';
                 logAudit($_SESSION['user_id'], 'reject_registration', 'Rejected request ID: ' . $request_id . ' - Comment: ' . $admin_comment);
             } else {
-                $message = 'Request not found or already processed.';
+                $message = t('request_not_found_oralready_processed');
                 $message_type = 'error';
             }
             break;
 
         default:
-            $message = 'Invalid request action.';
+            $message = t('invalid_request_action');
             $message_type = 'error';
             break;
     }

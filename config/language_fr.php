@@ -246,6 +246,10 @@ $translations = [
     'due' => 'Échéance',
     'clock_out_confirmation' => 'Êtes-vous sûr de vouloir dépointer ?',
     'leave_request_submitted' => 'Demande de congé soumise avec succès.',
+    'Email_sent _successfully' => 'Email envoyer avec success',
+    'Email_could_not_be_sent._Error: ' => 'l\'Email n\'a pas pu etre envoyer. Error:',
+    'request_not_found_oralready_processed' => 'Requete pas trouver ou deja traiter.',
+    'invalid_request_action' => 'Requete non valide.',
 
     // Admin Dashboard
     'admin_dashboard_welcome' => 'Bienvenue sur le tableau de bord d\'administration. Gérez les utilisateurs, les inscriptions et les paramètres du système.',
