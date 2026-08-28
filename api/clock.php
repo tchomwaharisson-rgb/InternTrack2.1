@@ -7,7 +7,7 @@ global $conn;
 header('Content-Type: application/json');
 
 if (!isLoggedIn() || !hasRole('intern')) {
-    echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+    echo json_encode(['success' => false, 'message' => t('Unauthorized')]);
     exit;
 }
 
@@ -35,7 +35,7 @@ try {
             // Check if it's before 8am (reminder)
             $work_start = getSetting('work_start') ?? '08:00:00';
             if ($now < $work_start) {
-                echo json_encode(['success' => false, 'message' => 'Cannot clock in before ' . $work_start]);
+                echo json_encode(['success' => false, 'message' => t('cannot_clock_in_before') . ' ' . $work_start]);
                 exit;
             }
             
@@ -65,7 +65,7 @@ try {
             
         case 'clock_out':
             if (!$timelog || !$timelog['clock_in']) {
-                echo json_encode(['success' => false, 'message' => 'You must clock in first']);
+                echo json_encode(['success' => false, 'message' => t('must_clock_in_first')]);
                 exit;
             }
             
@@ -93,12 +93,12 @@ try {
             
         case 'start_break':
             if (!$timelog || !$timelog['clock_in']) {
-                echo json_encode(['success' => false, 'message' => 'You must clock in first']);
+                echo json_encode(['success' => false, 'message' => t('must_clock_in_first')]);
                 exit;
             }
             
             if ($timelog['break_start'] && !$timelog['break_end']) {
-                echo json_encode(['success' => false, 'message' => 'Break already started']);
+                echo json_encode(['success' => false, 'message' => t('break_already_started')]);
                 exit;
             }
             
@@ -107,7 +107,7 @@ try {
             $break_end_time = getSetting('break_end') ?? '14:00:00';
             
             if ($now < $break_start_time || $now > $break_end_time) {
-                echo json_encode(['success' => false, 'message' => 'Break is only allowed between ' . $break_start_time . ' and ' . $break_end_time]);
+                echo json_encode(['success' => false, 'message' => t('break_only_allowed') . ' ' . $break_start_time . ' ' . t('and') . ' ' . $break_end_time]);
                 exit;
             }
             
@@ -129,7 +129,7 @@ try {
             }
             
             if ($timelog['break_end']) {
-                echo json_encode(['success' => false, 'message' => 'Break already ended']);
+                echo json_encode(['success' => false, 'message' => t('break_already_ended')]);
                 exit;
             }
             
@@ -147,8 +147,8 @@ try {
                 $supervisor_id = $stmt->fetchColumn();
                 if ($supervisor_id) {
                     $user = getUserData($user_id);
-                    $message = 'Abnormal break duration: ' . $user['first_name'] . ' ' . $user['last_name'] . 
-                               ' took a break of ' . $duration_minutes . ' minutes';
+                    $message = t('abnormal_break_duration') . ': ' . $user['first_name'] . ' ' . $user['last_name'] . 
+                               ' ' . t('took_a_break_of') . ' ' . $duration_minutes . ' ' . t('minutes') . ' ' . t('which_exceeds_the_maximum_allowed') . ' ' . $max_break . ' ' . t('minutes');
                     createNotification($supervisor_id, 'abnormal_break', $message, '/interntrack/supervisor/timelogs.php');
                 }
             }

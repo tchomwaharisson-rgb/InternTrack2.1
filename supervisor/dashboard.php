@@ -1,7 +1,9 @@
 <?php
+// supervisor/dashboard.php
 require_once '../config/config.php';
 require_once '../config/language.php';
 
+// Make sure $conn is available
 global $conn;
 
 if (!isLoggedIn() || !hasRole('supervisor')) {
@@ -10,6 +12,7 @@ if (!isLoggedIn() || !hasRole('supervisor')) {
 }
 
 $user_id = $_SESSION['user_id'];
+$user = getUserData($user_id);
 $today = date('Y-m-d');
 
 // Get assigned interns
@@ -24,20 +27,23 @@ $interns = $stmt->fetchAll();
 
 // Get today's status for each intern
 $intern_status = [];
+$active_count = 0;
 foreach ($interns as $intern) {
     $stmt = $conn->prepare("SELECT * FROM time_logs WHERE intern_id = ? AND date = ?");
     $stmt->execute([$intern['id'], $today]);
     $timelog = $stmt->fetch(PDO::FETCH_ASSOC);
     
-    if ($timelog && $timelog['clock_in'] && !$timelog['clock_out']) {
-        if ($timelog['break_start'] && !$timelog['break_end']) {
+    // Check if $timelog exists before accessing it
+    if ($timelog && isset($timelog['clock_in']) && $timelog['clock_in'] && !$timelog['clock_out']) {
+        if (isset($timelog['break_start']) && $timelog['break_start'] && !$timelog['break_end']) {
             $status = 'on_break';
         } else {
             $status = 'working';
+            $active_count++;
         }
-    } elseif ($timelog && $timelog['clock_in'] && $timelog['clock_out']) {
+    } elseif ($timelog && isset($timelog['clock_in']) && $timelog['clock_in'] && isset($timelog['clock_out']) && $timelog['clock_out']) {
         $status = 'completed';
-    } elseif ($timelog && !$timelog['clock_in']) {
+    } elseif ($timelog && isset($timelog['clock_in']) && !$timelog['clock_in']) {
         $status = 'missed';
     } else {
         $status = 'not_started';
@@ -64,7 +70,7 @@ $pending_leave = $stmt->fetchAll();
 // Get unread messages
 $stmt = $conn->prepare("SELECT COUNT(*) FROM messages WHERE receiver_id = ? AND is_read = FALSE");
 $stmt->execute([$user_id]);
-$unread_messages = $stmt->fetchColumn();
+$unread_messages = (int)$stmt->fetchColumn();
 
 // Get weekly summary
 $week_start = date('Y-m-d', strtotime('monday this week'));
@@ -80,92 +86,133 @@ $stmt = $conn->prepare("
 $stmt->execute([$week_start, $today, $user_id]);
 $weekly_summary = $stmt->fetchAll();
 
+// Get active goals count
+$intern_ids = array_column($interns, 'id');
+$active_goals = 0;
+if (!empty($intern_ids)) {
+    $placeholders = str_repeat('?,', count($intern_ids) - 1) . '?';
+    $stmt = $conn->prepare("SELECT COUNT(*) FROM goals WHERE intern_id IN ($placeholders) AND status != 'completed'");
+    $stmt->execute($intern_ids);
+    $active_goals = (int)$stmt->fetchColumn();
+}
+
 include_once '../includes/header.php';
 ?>
 
 <div class="main-content">
+    <!-- Welcome Section -->
+    <div class="welcome-section" style="margin-bottom: 24px;">
+        <h2 style="font-size: 24px; font-weight: 700; color: var(--gray-800);">
+            <?php echo t('welcome_back'); ?>, <?php echo htmlspecialchars($user['first_name']); ?>! 👋
+        </h2>
+        <p style="color: var(--gray-500);"><?php echo t('supervisor_dashboard_welcome'); ?></p>
+    </div>
+
     <!-- Stats Grid -->
     <div class="stats-grid">
-        <div class="stat-card">
+        <div class="stat-card" style="cursor: pointer;" onclick="window.location.href='/interntrack/supervisor/interns.php'">
             <div class="stat-icon">👥</div>
             <div class="stat-value"><?php echo count($interns); ?></div>
-            <div class="stat-label">Assigned Interns</div>
+            <div class="stat-label"><?php echo t('assigned_interns'); ?></div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card" style="border-left-color: #16a34a;" onclick="window.location.href='/interntrack/supervisor/timelogs.php'">
             <div class="stat-icon">✅</div>
-            <div class="stat-value">
-                <?php 
-                    $working = array_filter($intern_status, function($s) { 
-                        return $s['status'] === 'working' || $s['status'] === 'on_break'; 
-                    });
-                    echo count($working);
-                ?>
-            </div>
-            <div class="stat-label">Active Today</div>
+            <div class="stat-value"><?php echo $active_count; ?></div>
+            <div class="stat-label"><?php echo t('active_today'); ?></div>
         </div>
-        <div class="stat-card" style="border-left-color: #FFC107;">
+        <div class="stat-card" style="border-left-color: #f59e0b; cursor: pointer;" onclick="window.location.href='/interntrack/supervisor/leave.php'">
             <div class="stat-icon">📝</div>
             <div class="stat-value"><?php echo count($pending_leave); ?></div>
-            <div class="stat-label">Pending Leave</div>
+            <div class="stat-label"><?php echo t('pending_leave'); ?></div>
         </div>
-        <div class="stat-card" style="border-left-color: #2196F3;">
+        <div class="stat-card" style="border-left-color: #3b82f6; cursor: pointer;" onclick="window.location.href='/interntrack/supervisor/chat.php'">
             <div class="stat-icon">💬</div>
             <div class="stat-value"><?php echo $unread_messages; ?></div>
-            <div class="stat-label">Unread Messages</div>
+            <div class="stat-label"><?php echo t('unread_messages'); ?></div>
+        </div>
+        <div class="stat-card" style="border-left-color: #8b5cf6; cursor: pointer;" onclick="window.location.href='/interntrack/supervisor/goals.php'">
+            <div class="stat-icon">🎯</div>
+            <div class="stat-value"><?php echo $active_goals; ?></div>
+            <div class="stat-label"><?php echo t('active_goals'); ?></div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+        <h3><?php echo t('quick_actions'); ?></h3>
+        <div class="action-buttons">
+            <a href="/interntrack/supervisor/interns.php" class="btn btn-primary">
+                <span>👥</span> <?php echo t('view_interns'); ?>
+            </a>
+            <a href="/interntrack/supervisor/timelogs.php" class="btn btn-secondary">
+                <span>⏱️</span> <?php echo t('view_timelogs'); ?>
+            </a>
+            <a href="/interntrack/supervisor/goals.php" class="btn btn-warning">
+                <span>🎯</span> <?php echo t('manage_goals'); ?>
+            </a>
+            <a href="/interntrack/supervisor/leave.php" class="btn btn-secondary">
+                <span>📅</span> <?php echo t('manage_leave'); ?>
+            </a>
+            <a href="/interntrack/supervisor/chat.php" class="btn btn-secondary">
+                <span>💬</span> <?php echo t('send_message'); ?>
+            </a>
         </div>
     </div>
     
     <!-- Intern Status -->
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">Intern Status - <?php echo date('M d, Y'); ?></h3>
-            <a href="/interntrack/supervisor/interns.php" class="btn btn-sm btn-secondary">View All</a>
+            <h3 class="card-title"><?php echo t('intern_status_today'); ?></h3>
+            <span style="font-size: 14px; color: var(--gray-500);"><?php echo date('M d, Y'); ?></span>
         </div>
-        <?php if ($interns): ?>
+        <?php if (!empty($interns)): ?>
             <div class="table-container">
                 <table class="table">
                     <thead>
                         <tr>
-                            <th>Intern</th>
-                            <th>School</th>
-                            <th>Status</th>
-                            <th>Clock In</th>
-                            <th>Clock Out</th>
-                            <th>Hours</th>
-                            <th>Actions</th>
+                            <th><?php echo t('intern'); ?></th>
+                            <th><?php echo t('school'); ?></th>
+                            <th><?php echo t('status'); ?></th>
+                            <th><?php echo t('clock_in'); ?></th>
+                            <th><?php echo t('hours'); ?></th>
+                            <th><?php echo t('actions'); ?></th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php foreach ($interns as $intern): ?>
-                            <?php $status = $intern_status[$intern['id']] ?? ['status' => 'not_started', 'timelog' => null]; ?>
+                            <?php 
+                            // Get status with fallback
+                            $status_data = isset($intern_status[$intern['id']]) ? $intern_status[$intern['id']] : ['status' => 'not_started', 'timelog' => null];
+                            $status = $status_data['status'];
+                            $timelog = $status_data['timelog'];
+                            ?>
                             <tr>
                                 <td>
                                     <strong><?php echo htmlspecialchars($intern['first_name'] . ' ' . $intern['last_name']); ?></strong>
-                                    <div style="font-size: 12px; color: var(--secondary-text);">
+                                    <div style="font-size: 12px; color: var(--gray-500);">
                                         <?php echo htmlspecialchars($intern['email']); ?>
                                     </div>
                                 </td>
                                 <td>
                                     <?php echo htmlspecialchars($intern['school'] ?? 'N/A'); ?>
-                                    <?php if ($intern['field_of_study']): ?>
-                                        <div style="font-size: 12px; color: var(--secondary-text);">
+                                    <?php if (!empty($intern['field_of_study'])): ?>
+                                        <div style="font-size: 12px; color: var(--gray-500);">
                                             <?php echo htmlspecialchars($intern['field_of_study']); ?>
                                         </div>
                                     <?php endif; ?>
                                 </td>
                                 <td>
-                                    <span class="status-badge <?php echo $status['status']; ?>">
-                                        <?php echo ucfirst(str_replace('_', ' ', $status['status'])); ?>
+                                    <span class="status-badge <?php echo $status; ?>">
+                                        <?php echo ucfirst(str_replace('_', ' ', $status)); ?>
                                     </span>
                                 </td>
-                                <td><?php echo $status['timelog']['clock_in'] ? formatTime($status['timelog']['clock_in']) : '-'; ?></td>
-                                <td><?php echo $status['timelog']['clock_out'] ? formatTime($status['timelog']['clock_out']) : '-'; ?></td>
-                                <td><?php echo number_format($status['timelog']['total_hours'] ?? 0, 2); ?></td>
+                                <td><?php echo (!empty($timelog) && !empty($timelog['clock_in'])) ? formatTime($timelog['clock_in']) : '-'; ?></td>
+                                <td><?php echo (!empty($timelog) && isset($timelog['total_hours'])) ? number_format($timelog['total_hours'], 2) : '0.00'; ?></td>
                                 <td>
                                     <a href="/interntrack/supervisor/timelogs.php?intern_id=<?php echo $intern['id']; ?>" 
-                                       class="btn btn-sm btn-secondary">View</a>
+                                       class="btn btn-sm btn-secondary"><?php echo t('view'); ?></a>
                                     <a href="/interntrack/supervisor/chat.php?user_id=<?php echo $intern['id']; ?>" 
-                                       class="btn btn-sm btn-primary">Chat</a>
+                                       class="btn btn-sm btn-primary">💬</a>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -173,39 +220,47 @@ include_once '../includes/header.php';
                 </table>
             </div>
         <?php else: ?>
-            <p>No interns assigned to you yet.</p>
+            <p><?php echo t('no_interns_assigned'); ?></p>
         <?php endif; ?>
     </div>
     
     <!-- Weekly Summary -->
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">Weekly Summary (<?php echo date('M d', strtotime($week_start)); ?> - <?php echo date('M d'); ?>)</h3>
+            <h3 class="card-title"><?php echo t('weekly_hours_summary'); ?></h3>
+            <span style="font-size: 14px; color: var(--gray-500);">
+                <?php echo date('M d', strtotime($week_start)); ?> - <?php echo date('M d'); ?>
+            </span>
         </div>
-        <?php if ($weekly_summary): ?>
+        <?php if (!empty($weekly_summary)): ?>
             <div class="table-container">
                 <table class="table">
                     <thead>
                         <tr>
-                            <th>Intern</th>
-                            <th>Total Hours</th>
-                            <th>Avg Hours/Day</th>
-                            <th>Status</th>
+                            <th><?php echo t('intern'); ?></th>
+                            <th><?php echo t('total_hours'); ?></th>
+                            <th><?php echo t('avg_hours_per_day'); ?></th>
+                            <th><?php echo t('status'); ?></th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php foreach ($weekly_summary as $summary): ?>
+                            <?php 
+                            // Ensure values exist with fallbacks
+                            $total_hours = isset($summary['total_hours']) ? (float)$summary['total_hours'] : 0;
+                            $avg_hours = $total_hours / 5;
+                            ?>
                             <tr>
                                 <td><?php echo htmlspecialchars($summary['first_name'] . ' ' . $summary['last_name']); ?></td>
-                                <td><strong><?php echo number_format($summary['total_hours'], 2); ?></strong></td>
-                                <td><?php echo number_format($summary['total_hours'] / 5, 1); ?></td>
+                                <td><strong><?php echo number_format($total_hours, 2); ?></strong></td>
+                                <td><?php echo number_format($avg_hours, 1); ?></td>
                                 <td>
-                                    <?php if ($summary['total_hours'] >= 35): ?>
-                                        <span style="color: #4CAF50;">✅ On Track</span>
-                                    <?php elseif ($summary['total_hours'] >= 20): ?>
-                                        <span style="color: #FFC107;">⚠️ Partial</span>
+                                    <?php if ($total_hours >= 35): ?>
+                                        <span style="color: #4CAF50;">✅ <?php echo t('on_track'); ?></span>
+                                    <?php elseif ($total_hours >= 20): ?>
+                                        <span style="color: #f59e0b;">⚠️ <?php echo t('partial'); ?></span>
                                     <?php else: ?>
-                                        <span style="color: #f44336;">❌ Below Target</span>
+                                        <span style="color: #dc2626;">❌ <?php echo t('below_target'); ?></span>
                                     <?php endif; ?>
                                 </td>
                             </tr>
@@ -214,25 +269,25 @@ include_once '../includes/header.php';
                 </table>
             </div>
         <?php else: ?>
-            <p>No data available for this week.</p>
+            <p><?php echo t('no_weekly_data'); ?></p>
         <?php endif; ?>
     </div>
     
     <!-- Pending Leave Requests -->
-    <?php if ($pending_leave): ?>
+    <?php if (!empty($pending_leave)): ?>
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title">Pending Leave Requests</h3>
+                <h3 class="card-title"><?php echo t('pending_leave_requests'); ?></h3>
+                <a href="/interntrack/supervisor/leave.php" class="btn btn-sm btn-secondary"><?php echo t('view_all'); ?></a>
             </div>
             <div class="table-container">
                 <table class="table">
                     <thead>
                         <tr>
-                            <th>Intern</th>
-                            <th>Type</th>
-                            <th>Date</th>
-                            <th>Reason</th>
-                            <th>Actions</th>
+                            <th><?php echo t('intern'); ?></th>
+                            <th><?php echo t('type'); ?></th>
+                            <th><?php echo t('date'); ?></th>
+                            <th><?php echo t('actions'); ?></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -241,18 +296,10 @@ include_once '../includes/header.php';
                                 <td><?php echo htmlspecialchars($leave['first_name'] . ' ' . $leave['last_name']); ?></td>
                                 <td><?php echo ucfirst($leave['type']); ?></td>
                                 <td><?php echo date('M d, Y', strtotime($leave['leave_date'])); ?></td>
-                                <td><?php echo htmlspecialchars($leave['reason'] ?? '-'); ?></td>
                                 <td>
-                                    <form method="POST" action="/interntrack/supervisor/leave.php" style="display: inline;">
-                                        <input type="hidden" name="action" value="approve">
-                                        <input type="hidden" name="leave_id" value="<?php echo $leave['id']; ?>">
-                                        <button type="submit" class="btn btn-sm btn-success">Approve</button>
-                                    </form>
-                                    <form method="POST" action="/interntrack/supervisor/leave.php" style="display: inline;">
-                                        <input type="hidden" name="action" value="reject">
-                                        <input type="hidden" name="leave_id" value="<?php echo $leave['id']; ?>">
-                                        <button type="submit" class="btn btn-sm btn-danger">Reject</button>
-                                    </form>
+                                    <a href="/interntrack/supervisor/leave.php" class="btn btn-sm btn-primary">
+                                        <?php echo t('review'); ?>
+                                    </a>
                                 </td>
                             </tr>
                         <?php endforeach; ?>

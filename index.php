@@ -1,6 +1,15 @@
 <?php
+// index.php
 require_once 'config/config.php';
 require_once 'config/language.php';
+
+global $conn;
+
+// Make sure language is set in session
+if (!isset($_SESSION['language'])) {
+    $_SESSION['language'] = 'en';
+}
+
 
 // // If user is logged in, redirect to appropriate dashboard
 // if (isLoggedIn()) {
@@ -376,7 +385,7 @@ $recent_activities = $stmt->fetchAll();
         <!-- Hero Section -->
         <section class="hero">
             <h1><?php echo t('app_name'); ?> <span>.</span></h1>
-            <p>Smart Internship Management System - Streamline your internship program with automated time tracking, supervision, and communication.</p>
+            <p><?php echo t('app_tagline'); ?></p>
             <div class="hero-buttons">
                 <a href="/interntrack/auth/login.php" class="btn btn-primary"><?php echo t('login'); ?></a>
                 <a href="/interntrack/auth/register.php" class="btn btn-outline-white"><?php echo t('register'); ?></a>
@@ -387,19 +396,19 @@ $recent_activities = $stmt->fetchAll();
         <div class="stats-banner">
             <div class="stat-item">
                 <div class="stat-number"><?php echo $stats['active_interns']; ?></div>
-                <div class="stat-label">Active Interns</div>
+                <div class="stat-label"><?php echo t('active_interns'); ?></div>
             </div>
             <div class="stat-item">
                 <div class="stat-number"><?php echo $stats['active_supervisors']; ?></div>
-                <div class="stat-label">Supervisors</div>
+                <div class="stat-label"><?php echo t('supervisors'); ?></div>
             </div>
             <div class="stat-item">
                 <div class="stat-number"><?php echo $stats['today_clocked_in']; ?></div>
-                <div class="stat-label">Clocked In Today</div>
+                <div class="stat-label"><?php echo t('clocked_in_today'); ?></div>
             </div>
             <div class="stat-item">
                 <div class="stat-number"><?php echo $stats['pending_requests']; ?></div>
-                <div class="stat-label">Pending Registrations</div>
+                <div class="stat-label"><?php echo t('pending_registrations'); ?></div>
             </div>
         </div>
 
@@ -407,40 +416,40 @@ $recent_activities = $stmt->fetchAll();
         <div class="features-grid">
             <div class="feature-card">
                 <div class="feature-icon">⏱️</div>
-                <h3>Time Tracking</h3>
-                <p>Automated clock-in/out with break management and real-time status monitoring for interns.</p>
+                <h3><?php echo t('time_tracking'); ?></h3>
+                <p><?php echo t('time_tracking_description'); ?></p>
             </div>
             <div class="feature-card">
                 <div class="feature-icon">👔</div>
-                <h3>Supervision</h3>
-                <p>Supervisors can monitor intern activities, review time logs, and provide feedback instantly.</p>
+                <h3><?php echo t('supervision'); ?></h3>
+                <p><?php echo t('supervision_description'); ?></p>
             </div>
             <div class="feature-card">
                 <div class="feature-icon">💬</div>
-                <h3>Real-time Chat</h3>
-                <p>Direct messaging between interns and supervisors for seamless communication and support.</p>
+                <h3><?php echo t('real_time_chat'); ?></h3>
+                <p><?php echo t('real_time_chat_description'); ?></p>
             </div>
             <div class="feature-card">
                 <div class="feature-icon">🎯</div>
-                <h3>Goal Management</h3>
-                <p>Set, track, and achieve internship goals with progress monitoring and updates.</p>
+                <h3><?php echo t('goal_management'); ?></h3>
+                <p><?php echo t('goal_management_description'); ?></p>
             </div>
             <div class="feature-card">
                 <div class="feature-icon">📊</div>
-                <h3>Reports & Analytics</h3>
-                <p>Comprehensive reports on attendance, hours worked, and performance metrics.</p>
+                <h3><?php echo t('reports_analytics'); ?></h3>
+                <p><?php echo t('reports_analytics_description'); ?></p>
             </div>
             <div class="feature-card">
                 <div class="feature-icon">🔒</div>
-                <h3>Secure & Reliable</h3>
-                <p>Enterprise-grade security with role-based access control and data protection.</p>
+                <h3><?php echo t('secure_reliable'); ?></h3>
+                <p><?php echo t('secure_reliable_description'); ?></p>
             </div>
         </div>
 
         <!-- Recent Activities -->
         <?php if ($recent_activities): ?>
         <div class="recent-activities">
-            <h3>🕐 Today's Activity</h3>
+            <h3>🕐 <?php echo t('today_s_activity'); ?></h3>
             <?php foreach ($recent_activities as $activity): ?>
                 <div class="activity-item">
                     <span class="activity-time"><?php echo date('H:i', strtotime($activity['clock_in'])); ?></span>
@@ -455,21 +464,16 @@ $recent_activities = $stmt->fetchAll();
 
         <!-- Footer -->
         <div class="footer-landing">
-            <p>&copy; <?php echo date('Y'); ?> <?php echo t('app_name'); ?>. All rights reserved.</p>
+            <p>&copy; <?php echo date('Y'); ?> <?php echo t('app_name'); ?>. <?php echo t('all_rights_reserved'); ?></p>
             <p style="font-size: 13px; margin-top: 4px;">
-                Built with ❤️ for better internship management
+                <?php echo t('built_with_heart'); ?>
             </p>
         </div>
     </div>
 
     <script>
         // Language switcher
-        document.querySelectorAll('.language-switcher button').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const lang = this.dataset.lang;
-                document.querySelectorAll('.language-switcher button').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                
+            function switchLanguage(lang) {
                 fetch('/interntrack/api/settings.php', {
                     method: 'POST',
                     headers: {
@@ -484,8 +488,7 @@ $recent_activities = $stmt->fetchAll();
                         location.reload();
                     }
                 });
-            });
-        });
+            }
 
         // Theme toggle
         document.querySelector('.theme-toggle')?.addEventListener('click', function() {

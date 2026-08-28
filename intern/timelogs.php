@@ -1,7 +1,9 @@
 <?php
+// intern/timelog.php
 require_once '../config/config.php';
 require_once '../config/language.php';
 
+// Make sure $conn is available
 global $conn;
 
 if (!isLoggedIn() || !hasRole('intern')) {
@@ -51,7 +53,7 @@ include_once '../includes/header.php';
     <!-- Today's Status -->
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">Today's Status - <?php echo date('M d, Y'); ?></h3>
+            <h3 class="card-title"><?php echo t('today_status'); ?></h3>
             <span class="status-badge <?php echo $status; ?>">
                 <?php echo ucfirst(str_replace('_', ' ', $status)); ?>
             </span>
@@ -59,25 +61,25 @@ include_once '../includes/header.php';
         <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: center;">
             <div style="display: flex; gap: 12px; flex-wrap: wrap;">
                 <?php if ($status === 'not_started'): ?>
-                    <button class="btn btn-primary" onclick="clockIn()">✅ Clock In</button>
+                    <button class="btn btn-primary" onclick="clockIn()">✅ <?php echo t('clock_in'); ?></button>
                 <?php elseif ($status === 'working'): ?>
-                    <button class="btn btn-warning" onclick="startBreak()">⏸️ Start Break</button>
-                    <button class="btn btn-danger" onclick="clockOut()">🚪 Clock Out</button>
+                    <button class="btn btn-warning" onclick="startBreak()">⏸️ <?php echo t('start_break'); ?></button>
+                    <button class="btn btn-danger" onclick="clockOut()">🚪 <?php echo t('clock_out'); ?></button>
                 <?php elseif ($status === 'on_break'): ?>
-                    <button class="btn btn-success" onclick="endBreak()">▶️ End Break</button>
-                    <button class="btn btn-danger" onclick="clockOut()">🚪 Clock Out</button>
+                    <button class="btn btn-success" onclick="endBreak()">▶️ <?php echo t('end_break'); ?></button>
+                    <button class="btn btn-danger" onclick="clockOut()">🚪 <?php echo t('clock_out'); ?></button>
                 <?php endif; ?>
             </div>
             <?php if ($today_log): ?>
-                <div style="margin-left: auto; display: flex; gap: 24px; font-size: 14px;">
+                <div style="margin-left: auto; display: flex; gap: 24px; font-size: 14px; flex-wrap: wrap;">
                     <?php if ($today_log['clock_in']): ?>
-                        <div><strong>Arrived:</strong> <?php echo formatTime($today_log['clock_in']); ?></div>
+                        <div><strong><?php echo t('clock_in'); ?>:</strong> <?php echo formatTime($today_log['clock_in']); ?></div>
                     <?php endif; ?>
                     <?php if ($today_log['clock_out']): ?>
-                        <div><strong>Departed:</strong> <?php echo formatTime($today_log['clock_out']); ?></div>
+                        <div><strong><?php echo t('clock_out'); ?>:</strong> <?php echo formatTime($today_log['clock_out']); ?></div>
                     <?php endif; ?>
                     <?php if ($today_log['total_hours'] > 0): ?>
-                        <div><strong>Hours:</strong> <?php echo number_format($today_log['total_hours'], 2); ?></div>
+                        <div><strong><?php echo t('hours'); ?>:</strong> <?php echo number_format($today_log['total_hours'], 2); ?></div>
                     <?php endif; ?>
                 </div>
             <?php endif; ?>
@@ -89,29 +91,29 @@ include_once '../includes/header.php';
         <div class="stat-card">
             <div class="stat-icon">📊</div>
             <div class="stat-value"><?php echo number_format($total_hours, 1); ?></div>
-            <div class="stat-label">Total Hours (<?php echo date('M Y', strtotime($month)); ?>)</div>
+            <div class="stat-label"><?php echo t('total_hours'); ?> (<?php echo date('M Y', strtotime($month)); ?>)</div>
         </div>
         <div class="stat-card">
             <div class="stat-icon">📅</div>
             <div class="stat-value"><?php echo $days_worked; ?></div>
-            <div class="stat-label">Days Worked</div>
+            <div class="stat-label"><?php echo t('days_worked'); ?></div>
         </div>
         <div class="stat-card">
             <div class="stat-icon">📈</div>
             <div class="stat-value"><?php echo number_format($avg_hours, 1); ?></div>
-            <div class="stat-label">Avg Hours/Day</div>
+            <div class="stat-label"><?php echo t('avg_hours_per_day'); ?></div>
         </div>
         <div class="stat-card">
             <div class="stat-icon">⏱️</div>
             <div class="stat-value"><?php echo floor($total_break_minutes / 60); ?>h <?php echo $total_break_minutes % 60; ?>m</div>
-            <div class="stat-label">Total Break Time</div>
+            <div class="stat-label"><?php echo t('total_break'); ?></div>
         </div>
     </div>
     
     <!-- Time Logs Table -->
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">Time Logs</h3>
+            <h3 class="card-title"><?php echo t('time_logs'); ?></h3>
             <div style="display: flex; gap: 8px;">
                 <form method="GET" action="" style="display: inline;">
                     <input type="month" name="month" class="form-control" style="width: 160px; display: inline-block;" 
@@ -124,14 +126,14 @@ include_once '../includes/header.php';
                 <table class="table">
                     <thead>
                         <tr>
-                            <th>Date</th>
-                            <th>Clock In</th>
-                            <th>Clock Out</th>
-                            <th>Break Start</th>
-                            <th>Break End</th>
-                            <th>Break (min)</th>
-                            <th>Hours</th>
-                            <th>Status</th>
+                            <th><?php echo t('date'); ?></th>
+                            <th><?php echo t('clock_in'); ?></th>
+                            <th><?php echo t('clock_out'); ?></th>
+                            <th><?php echo t('break_start'); ?></th>
+                            <th><?php echo t('break_end'); ?></th>
+                            <th><?php echo t('break_duration'); ?></th>
+                            <th><?php echo t('hours'); ?></th>
+                            <th><?php echo t('status'); ?></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -142,7 +144,7 @@ include_once '../includes/header.php';
                                 <td><?php echo $log['clock_out'] ? formatTime($log['clock_out']) : '-'; ?></td>
                                 <td><?php echo $log['break_start'] ? formatTime($log['break_start']) : '-'; ?></td>
                                 <td><?php echo $log['break_end'] ? formatTime($log['break_end']) : '-'; ?></td>
-                                <td><?php echo $log['total_break_minutes'] ?? 0; ?></td>
+                                <td><?php echo $log['total_break_minutes'] ?? 0; ?> min</td>
                                 <td><strong><?php echo number_format($log['total_hours'], 2); ?></strong></td>
                                 <td>
                                     <span class="status-badge <?php echo $log['status']; ?>">
@@ -153,8 +155,8 @@ include_once '../includes/header.php';
                         <?php endforeach; ?>
                     </tbody>
                     <tfoot>
-                        <tr style="font-weight: 600; background: var(--primary-gray);">
-                            <td colspan="6" style="text-align: right;">Total:</td>
+                        <tr style="font-weight: 600; background: var(--gray-50);">
+                            <td colspan="6" style="text-align: right;"><?php echo t('total'); ?>:</td>
                             <td><?php echo number_format($total_hours, 2); ?></td>
                             <td></td>
                         </tr>
@@ -162,7 +164,11 @@ include_once '../includes/header.php';
                 </table>
             </div>
         <?php else: ?>
-            <p>No time logs found for this month.</p>
+            <div style="text-align: center; padding: 40px 0;">
+                <div style="font-size: 48px; margin-bottom: 16px;">⏱️</div>
+                <h3><?php echo t('no_timelogs_found'); ?></h3>
+                <p style="color: var(--gray-500);"><?php echo t('no_timelogs_message_intern'); ?></p>
+            </div>
         <?php endif; ?>
     </div>
 </div>
@@ -193,7 +199,7 @@ function clockIn() {
 }
 
 function clockOut() {
-    if (!confirm('Are you sure you want to clock out?')) return;
+    if (!confirm('<?php echo t('clock_out_confirmation'); ?>')) return;
     
     fetch('/interntrack/api/clock.php', {
         method: 'POST',
@@ -266,6 +272,25 @@ function endBreak() {
         showToast('<?php echo t('error_occurred'); ?>', 'error');
         console.error(error);
     });
+}
+
+function showToast(message, type = 'info') {
+    const container = document.querySelector('.toast-container') || (() => {
+        const el = document.createElement('div');
+        el.className = 'toast-container';
+        document.body.appendChild(el);
+        return el;
+    })();
+    
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.textContent = message;
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+    }, 5000);
 }
 </script>
 

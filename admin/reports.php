@@ -44,7 +44,8 @@ $sql = "SELECT
             COUNT(DISTINCT tl.date) as days_worked,
             AVG(tl.total_hours) as avg_hours,
             COUNT(CASE WHEN tl.status = 'completed' THEN 1 END) as completed_days,
-            COUNT(CASE WHEN tl.status = 'missed' THEN 1 END) as missed_days
+            COUNT(CASE WHEN tl.status = 'missed' THEN 1 END) as missed_days,
+            COUNT(CASE WHEN tl.status = 'active' THEN 1 END) as active_days
         FROM users u
         LEFT JOIN interns i ON u.id = i.user_id
         LEFT JOIN time_logs tl ON u.id = tl.intern_id 
@@ -83,15 +84,17 @@ $stmt = $conn->query("SELECT id, first_name, last_name FROM users WHERE role = '
 $supervisors = $stmt->fetchAll();
 
 // Export functionality
-if ($export_format === 'pdf') {
-    // Generate PDF (using a simple HTML to PDF approach)
-    header('Content-Type: application/pdf');
-    header('Content-Disposition: attachment; filename="intern_report.pdf"');
-    // ... PDF generation code
-} elseif ($export_format === 'excel') {
-    header('Content-Type: application/vnd.ms-excel');
-    header('Content-Disposition: attachment; filename="intern_report.xls"');
-    // ... Excel generation code
+if (!empty($export_format)) {
+    // Use the exported functions implemented in export_functions.php
+    require_once __DIR__ . '/export_functions.php';
+
+    if ($export_format === 'pdf') {
+        exportReportPDF($report_data, $start_date, $end_date, $total_hours, $avg_hours);
+        exit;
+    } elseif ($export_format === 'excel') {
+        exportReportExcel($report_data, $start_date, $end_date, $total_hours, $avg_hours);
+        exit;
+    }
 }
 
 include_once '../includes/header.php';
